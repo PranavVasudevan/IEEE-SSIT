@@ -1,0 +1,50 @@
+/*
+ * Color tokens. Light values are the original design palette, unchanged.
+ * Dark values are a silverish-black professional finish: near-black
+ * backgrounds with brightened brand accents for legible contrast.
+ */
+:root {
+  --c-navy: #1a4a8a;
+  --c-navy-text: #1a4a8a;
+  --c-gold: #e8a020;
+  --c-purple: #7b5ea7;
+  --c-sky: #4a9fd4;
+  --c-bg: #f5f1ec;
+  --c-bg-warm: #ede9e3;
+  --c-ink: #1a1a1a;
+  --c-muted: #6b7280;
+  --c-border: #d6d0c8;
+
+  --c-navy-rgb: 26, 74, 138;
+  --c-gold-rgb: 232, 160, 32;
+  --c-purple-rgb: 123, 94, 167;
+  --c-sky-rgb: 74, 159, 212;
+  --c-bg-rgb: 245, 241, 236;
+  --c-bg-warm-rgb: 237, 233, 227;
+  --c-ink-rgb: 26, 26, 26;
+  --c-border-rgb: 214, 208, 200;
+  --c-black-rgb: 0, 0, 0;
+}
+
+[data-theme="dark"] {
+  --c-navy: #2e6db4;
+  --c-navy-text: #6fa8e0;
+  --c-gold: #e8a020;
+  --c-purple: #9b7bc7;
+  --c-sky: #63b0e0;
+  --c-bg: #141417;
+  --c-bg-warm: #0a0a0c;
+  --c-ink: #f0efec;
+  --c-muted: #9ca0a6;
+  --c-border: #2c2c30;
+
+  --c-navy-rgb: 46, 109, 180;
+  --c-gold-rgb: 232, 160, 32;
+  --c-purple-rgb: 155, 123, 199;
+  --c-sky-rgb: 99, 176, 224;
+  --c-bg-rgb: 20, 20, 23;
+  --c-bg-warm-rgb: 10, 10, 12;
+  --c-ink-rgb: 240, 239, 236;
+  --c-border-rgb: 44, 44, 48;
+  --c-black-rgb: 0, 0, 0;
+}
