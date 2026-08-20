@@ -1,7 +1,7 @@
 import ssitLogo from "@/assets/images/ssit-logo.png"
 import { SectionLabel } from "@/components/ui/SectionLabel"
 import { orgInfo, technicalActivityAreas, leadership } from "@/data/ssit"
-import { solid, tint } from "@/styles/colors"
+import { solid, tint, navySolid } from "@/styles/colors"
 
 export default function About() {
   return (
@@ -90,7 +90,7 @@ export default function About() {
               </div>
               <div
                 className="p-6 rounded-xl"
-                style={{ background: solid("navy") }}
+                style={{ background: navySolid }}
               >
                 <p
                   className="font-display italic"

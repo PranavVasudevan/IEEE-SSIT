@@ -1,11 +1,11 @@
 import { orgInfo } from "@/data/ssit"
-import { solid } from "@/styles/colors"
+import { solid, navySolid } from "@/styles/colors"
 
 export function PullQuote() {
   return (
     <section
       className="py-24 px-3 md:px-8"
-      style={{ background: solid("navy") }}
+      style={{ background: navySolid }}
     >
       <div className="max-w-6xl mx-auto text-center">
         <div

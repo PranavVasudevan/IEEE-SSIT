@@ -1,99 +1,45 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 @import './theme.css';
 
 @theme {
-  --color-ssit-navy: #1a4a8a;
-  --color-ssit-blue: #2e6db4;
-  --color-ssit-sky: #4a9fd4;
-  --color-ssit-gold: #e8a020;
-  --color-ssit-purple: #7b5ea7;
-  --color-ssit-bg: #f5f1ec;
-  --color-ssit-bg-warm: #ede9e3;
-  --color-ssit-ink: #1a1a1a;
-  --color-ssit-muted: #6b7280;
-  --color-ssit-border: #d6d0c8;
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --color-ssit-navy: #28352f;
+  --color-ssit-blue: #28352f;
+  --color-ssit-sky: #8c9a8a;
+  --color-ssit-gold: #b25d42;
+  --color-ssit-purple: #7c746a;
+  --color-ssit-bg: #f6f4ef;
+  --color-ssit-bg-warm: #ece9e1;
+  --color-ssit-ink: #191917;
+  --color-ssit-muted: #77756e;
+  --color-ssit-border: #d8d5cc;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Manrope', system-ui, sans-serif;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--c-border) transparent; }
+body { margin: 0; font-family: 'Manrope', system-ui, sans-serif; background: var(--c-bg); color: var(--c-ink); -webkit-font-smoothing: antialiased; }
+body::selection { background: rgba(178, 93, 66, .18); }
+img { max-width: 100%; }
+button, a, input, textarea { font: inherit; }
+a { text-underline-offset: 4px; }
+.font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+.font-sans-ui { font-family: 'Manrope', system-ui, sans-serif; }
+.rounded-xl, .rounded-2xl, .rounded-full { border-radius: 2px; }
+button, a { transition: color .2s ease, background-color .2s ease, border-color .2s ease, opacity .2s ease, transform .2s ease; }
+button:active, a:active { transform: scale(.98); }
+
+@keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: 0 } }
+.cursor-blink { animation: blink 1s step-end infinite; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: translateY(0) } }
+.animate-fade-up { animation: fadeUp .7s cubic-bezier(.23,1,.32,1) both; }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+.animate-fade-in { animation: fadeIn .55s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 
-html {
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: var(--c-border) transparent;
-}
-
-body {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  background-color: var(--c-bg);
-  color: var(--c-ink);
-  -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--c-border);
-  border-radius: 3px;
-}
-
-.font-display {
-  font-family: 'Playfair Display', Georgia, serif;
-}
-.font-sans-ui {
-  font-family: 'DM Sans', system-ui, sans-serif;
-}
-
-.hover\:bg-ssit-bg-warm:hover {
-  background-color: var(--c-bg-warm);
-}
-
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-.cursor-blink {
-  animation: blink 1s step-end infinite;
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.animate-fade-up {
-  animation: fadeUp 0.7s ease forwards;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-.animate-fade-in {
-  animation: fadeIn 0.6s ease forwards;
-}
+@media (max-width: 640px) { .font-display { letter-spacing: -.02em; } }

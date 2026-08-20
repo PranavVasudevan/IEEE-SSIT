@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 import { SectionLabel } from "@/components/ui/SectionLabel"
 import { membershipBenefits, membershipCategories, contact } from "@/data/ssit"
-import { solid, tint } from "@/styles/colors"
+import { solid, tint, navySolid, navySolidTint } from "@/styles/colors"
 
 export default function Membership() {
   return (
@@ -121,9 +121,9 @@ export default function Membership() {
             to="/contact"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-sans-ui text-sm font-medium transition-all duration-200 hover:opacity-90 active:scale-95"
             style={{
-              background: solid("navy"),
+              background: navySolid,
               color: "#fff",
-              boxShadow: `0 4px 16px ${tint("navy", 0.28)}`,
+              boxShadow: `0 4px 16px ${navySolidTint(0.28)}`,
             }}
           >
             Contact the chapter

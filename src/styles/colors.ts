@@ -21,6 +21,12 @@ export function solid(
 /** Text-safe navy variant (lighter in dark mode for contrast on near-black). */
 export const navyText = "var(--c-navy-text)"
 
+/** Non-inverting brand navy — stays the same dark green in both themes. Use as a
+ * solid background behind white text (buttons, quote panels), where the theme's
+ * regular `navy` token would flip to a light color in dark mode. */
+export const navySolid = "var(--c-navy-solid)"
+export const navySolidTint = (alpha: number) => `rgba(var(--c-navy-solid-rgb), ${alpha})`
+
 /** rgba() built from a token's rgb triplet, e.g. tint("navy", 0.08). */
 export function tint(
   token: AccentToken | "ink" | "muted" | "bg" | "bgWarm" | "border" | "black",

@@ -189,6 +189,12 @@ export const contact = {
   location: "SSN College of Engineering, Chennai — 603 110",
 }
 
+// Chapter social handles — hrefs are placeholders pending the actual profile links.
+export const socialLinks = [
+  { platform: "instagram" as const, label: "Instagram", href: "" },
+  { platform: "linkedin" as const, label: "LinkedIn", href: "" },
+]
+
 export const standardsNote =
   "Ethically aligned standards guidance and development of specific IEEE standards addressing the social implications of technology."
 

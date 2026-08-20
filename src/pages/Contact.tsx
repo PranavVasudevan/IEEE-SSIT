@@ -1,6 +1,7 @@
 import { SectionLabel } from "@/components/ui/SectionLabel"
+import { SocialLinks } from "@/components/ui/SocialLinks"
 import { contact } from "@/data/ssit"
-import { solid, tint } from "@/styles/colors"
+import { solid, tint, navySolid, navySolidTint } from "@/styles/colors"
 
 const contactLines = [
   { icon: "✉", label: contact.email, href: `mailto:${contact.email}` },
@@ -75,6 +76,15 @@ export default function Contact() {
                 </div>
               ),
             )}
+          </div>
+          <div className="mt-8">
+            <p
+              className="font-sans-ui text-xs uppercase tracking-widest mb-3"
+              style={{ color: solid("navy"), letterSpacing: "0.1em" }}
+            >
+              Follow the chapter
+            </p>
+            <SocialLinks />
           </div>
         </div>
 
@@ -158,9 +168,9 @@ export default function Contact() {
             type="submit"
             className="w-full py-3 rounded-xl font-sans-ui text-sm font-medium transition-all duration-200 hover:opacity-90 active:scale-95"
             style={{
-              background: solid("navy"),
+              background: navySolid,
               color: "#fff",
-              boxShadow: `0 4px 16px ${tint("navy", 0.28)}`,
+              boxShadow: `0 4px 16px ${navySolidTint(0.28)}`,
             }}
           >
             Submit application
