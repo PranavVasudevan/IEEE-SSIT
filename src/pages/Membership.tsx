@@ -4,8 +4,11 @@ import { SectionLabel } from "@/components/ui/SectionLabel"
 import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useMembershipContent } from "@/firebase/firestore"
+import { useDocumentTitle } from "@/hooks/useDocumentTitle"
+import { JoinApplicationForm } from "@/components/sections/JoinApplicationForm"
 
 export default function Membership() {
+  useDocumentTitle("Membership")
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const { membershipContent } = useMembershipContent()
 
@@ -71,6 +74,21 @@ export default function Membership() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Assisted Application Form → prefills the official Google Form */}
+        <div id="apply-form" className="space-y-6 scroll-mt-28">
+          <div>
+            <h2 className="font-display text-2xl font-bold" style={{ color: solid("ink") }}>
+              Apply to Join the Chapter
+            </h2>
+            <p className="font-sans-ui text-xs md:text-sm mt-1" style={{ color: solid("muted") }}>
+              Fill in your details once here — we'll carry them straight into the official application form so you don't have to retype anything.
+            </p>
+          </div>
+          <div className="p-6 md:p-8 rounded-3xl border" style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}>
+            <JoinApplicationForm ieeeJoinUrl={membershipContent.joinPortalUrl} />
           </div>
         </div>
 
@@ -157,13 +175,14 @@ export default function Membership() {
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <a
-              href={membershipContent.joinPortalUrl}
-              target="_blank"
-              rel="noreferrer"
+              href="#top"
+              onClick={(e) => {
+                e.preventDefault()
+                document.getElementById("apply-form")?.scrollIntoView({ behavior: "smooth" })
+              }}
               className="px-6 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold bg-amber-400 text-black hover:bg-amber-300 transition-colors shadow-lg active:scale-95 flex items-center gap-1.5"
             >
-              Open IEEE Join Portal
-              <Icons.ExternalLink size={13} />
+              Start Application
             </a>
             <Link
               to="/contact"

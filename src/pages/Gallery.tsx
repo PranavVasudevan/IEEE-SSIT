@@ -3,9 +3,13 @@ import { SectionLabel } from "@/components/ui/SectionLabel"
 import { solid, tint } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useGallery, GalleryPhoto } from "@/firebase/firestore"
+import { useDocumentTitle } from "@/hooks/useDocumentTitle"
+import { EmptyState } from "@/components/ui/EmptyState"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 export default function Gallery() {
-  const { gallery } = useGallery()
+  useDocumentTitle("Gallery")
+  const { gallery, loading } = useGallery()
   const [selectedFilter, setSelectedFilter] = useState<string>("All")
   const [activePhoto, setActivePhoto] = useState<GalleryPhoto | null>(null)
 
@@ -50,6 +54,23 @@ export default function Gallery() {
         </div>
 
         {/* Gallery Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-72 w-full rounded-2xl" />
+            ))}
+          </div>
+        ) : filteredPhotos.length === 0 ? (
+          <EmptyState
+            icon={Icons.Gallery}
+            title="No photos found"
+            message={
+              selectedFilter === "All"
+                ? "The gallery is empty right now — check back after the next chapter event."
+                : `No photos tagged "${selectedFilter}" yet. Try another category.`
+            }
+          />
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPhotos.map((photo) => (
             <div
@@ -97,6 +118,7 @@ export default function Gallery() {
             </div>
           ))}
         </div>
+        )}
 
         {/* Lightbox Modal */}
         {activePhoto && (

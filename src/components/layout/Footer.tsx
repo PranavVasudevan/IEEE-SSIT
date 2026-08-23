@@ -1,10 +1,34 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { navLinks, orgInfo, contact } from "@/data/ssit"
 import { SocialLinks } from "@/components/ui/SocialLinks"
-import { solid, tint } from "@/styles/colors"
+import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
+import { subscribeToNewsletter } from "@/firebase/firestore"
+import { useToast } from "@/components/ui/Toast"
 
 export function Footer() {
+  const { showToast } = useToast()
+  const [email, setEmail] = useState("")
+  const [subscribing, setSubscribing] = useState(false)
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim()) return
+    setSubscribing(true)
+    try {
+      const result = await subscribeToNewsletter(email)
+      if (result === "duplicate") {
+        showToast("Already subscribed", "info", "This email is already on our newsletter list.")
+      } else {
+        showToast("Subscribed!", "success", "You'll hear from us about upcoming events and chapter news.")
+        setEmail("")
+      }
+    } finally {
+      setSubscribing(false)
+    }
+  }
+
   return (
     <footer
       className="border-t mt-20 transition-colors duration-300"
@@ -33,6 +57,31 @@ export function Footer() {
             </p>
             <div className="pt-2">
               <SocialLinks />
+            </div>
+
+            <div className="pt-2 space-y-2">
+              <h4 className="font-sans-ui text-xs uppercase tracking-widest font-bold" style={{ color: solid("navy") }}>
+                Stay in the loop
+              </h4>
+              <form onSubmit={handleSubscribe} className="flex gap-2 max-w-sm">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@ssn.edu.in"
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg text-xs font-sans-ui border outline-none focus:ring-2"
+                  style={{ background: solid("bg"), borderColor: tint("border", 0.8), color: solid("ink") }}
+                />
+                <button
+                  type="submit"
+                  disabled={subscribing}
+                  className="px-3.5 py-2 rounded-lg text-xs font-sans-ui font-semibold text-white shrink-0 disabled:opacity-60"
+                  style={{ background: navySolid }}
+                >
+                  {subscribing ? "..." : "Subscribe"}
+                </button>
+              </form>
             </div>
           </div>
 

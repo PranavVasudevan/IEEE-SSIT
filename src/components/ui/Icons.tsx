@@ -183,6 +183,12 @@ export const Icons = {
       <circle cx="12" cy="12" r="2"/>
     </svg>
   ),
+  Search: ({ size = 18, className = "", ...props }: IconProps) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <circle cx="11" cy="11" r="8"/>
+      <line x1="21" x2="16.65" y1="21" y2="16.65"/>
+    </svg>
+  ),
   Copy: ({ size = 18, className = "", ...props }: IconProps) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
       <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>

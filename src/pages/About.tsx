@@ -4,6 +4,9 @@ import { leadership } from "@/data/ssit"
 import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useTeam, useChapterInfo } from "@/firebase/firestore"
+import { useDocumentTitle } from "@/hooks/useDocumentTitle"
+import { EmptyState } from "@/components/ui/EmptyState"
+import { PersonCardSkeletonGrid } from "@/components/ui/Skeleton"
 import ssitLogo from "@/assets/images/logo.jpg"
 
 function getMemberInitials(name: string): string {
@@ -15,8 +18,9 @@ function getMemberInitials(name: string): string {
 }
 
 export default function About() {
+  useDocumentTitle("About")
   const [activeTab, setActiveTab] = useState<"overview" | "focus" | "leadership" | "team">("overview")
-  const { team } = useTeam()
+  const { team, loading: teamLoading } = useTeam()
   const { chapterInfo } = useChapterInfo()
 
   const webDevMembers = team.filter(m => m.teamType === "Web Development" && (m.active !== false))
@@ -256,6 +260,11 @@ export default function About() {
                 </div>
               </div>
 
+              {teamLoading ? (
+                <PersonCardSkeletonGrid count={3} />
+              ) : execMembers.length === 0 ? (
+                <EmptyState icon={Icons.Users} title="Executive committee roster coming soon" />
+              ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {execMembers.map((member) => (
                   <div
@@ -301,6 +310,7 @@ export default function About() {
                   </div>
                 ))}
               </div>
+              )}
             </div>
 
             {/* Web Development Team (Core Developers) */}
@@ -321,6 +331,11 @@ export default function About() {
                 </div>
               </div>
 
+              {teamLoading ? (
+                <PersonCardSkeletonGrid count={3} />
+              ) : webDevMembers.length === 0 ? (
+                <EmptyState icon={Icons.Users} title="Web dev team roster coming soon" />
+              ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {webDevMembers.map((member) => (
                   <div
@@ -364,6 +379,7 @@ export default function About() {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           </div>
         )}

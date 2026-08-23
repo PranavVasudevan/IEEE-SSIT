@@ -1475,6 +1475,113 @@ export async function deleteSubmission(id: string) {
 }
 
 // =========================================================================
+// 7.5 NEWSLETTER SUBSCRIBERS (`newsletter_subscribers`)
+// =========================================================================
+
+export interface NewsletterSubscriber {
+  id: string
+  email: string
+  timestamp: string
+}
+
+const NEWSLETTER_LOCAL_KEY = "ieee_ssit_newsletter_subscribers"
+
+export function useNewsletterSubscribers() {
+  const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let unsubscribe = () => {}
+
+    const init = async () => {
+      if (isFirebaseConfigured) {
+        const sdk = await initFirebaseSDK()
+        if (sdk && sdk.db) {
+          const { collection, onSnapshot } = await import("firebase/firestore")
+          unsubscribe = onSnapshot(collection(sdk.db, "newsletter_subscribers"), (snapshot) => {
+            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NewsletterSubscriber))
+            setSubscribers(list)
+            setLoading(false)
+          }, () => loadFromLocal())
+          return
+        }
+      }
+
+      loadFromLocal()
+    }
+
+    function loadFromLocal() {
+      const stored = localStorage.getItem(NEWSLETTER_LOCAL_KEY)
+      setSubscribers(stored ? JSON.parse(stored) : [])
+      setLoading(false)
+    }
+
+    init()
+
+    const handler = () => loadFromLocal()
+    window.addEventListener("newsletter_changed", handler)
+    return () => {
+      unsubscribe()
+      window.removeEventListener("newsletter_changed", handler)
+    }
+  }, [])
+
+  return { subscribers, loading }
+}
+
+export async function subscribeToNewsletter(email: string): Promise<"ok" | "duplicate"> {
+  const normalized = email.trim().toLowerCase()
+
+  const stored = localStorage.getItem(NEWSLETTER_LOCAL_KEY)
+  const list: NewsletterSubscriber[] = stored ? JSON.parse(stored) : []
+  if (list.some(s => s.email.toLowerCase() === normalized)) {
+    return "duplicate"
+  }
+
+  const subscriber: NewsletterSubscriber = {
+    id: `sub-${Date.now()}`,
+    email: normalized,
+    timestamp: new Date().toISOString(),
+  }
+
+  if (isFirebaseConfigured) {
+    try {
+      const sdk = await initFirebaseSDK()
+      if (sdk && sdk.db) {
+        const { collection, addDoc } = await import("firebase/firestore")
+        await addDoc(collection(sdk.db, "newsletter_subscribers"), subscriber)
+      }
+    } catch (e) {}
+  }
+
+  list.unshift(subscriber)
+  localStorage.setItem(NEWSLETTER_LOCAL_KEY, JSON.stringify(list))
+  window.dispatchEvent(new Event("newsletter_changed"))
+  return "ok"
+}
+
+export async function deleteNewsletterSubscriber(id: string) {
+  if (isFirebaseConfigured) {
+    try {
+      const sdk = await initFirebaseSDK()
+      if (sdk && sdk.db) {
+        const { doc, deleteDoc } = await import("firebase/firestore")
+        await deleteDoc(doc(sdk.db, "newsletter_subscribers", id))
+      }
+    } catch (e) {}
+  }
+
+  const stored = localStorage.getItem(NEWSLETTER_LOCAL_KEY)
+  if (stored) {
+    let list: NewsletterSubscriber[] = JSON.parse(stored)
+    list = list.filter(s => s.id !== id)
+    localStorage.setItem(NEWSLETTER_LOCAL_KEY, JSON.stringify(list))
+    window.dispatchEvent(new Event("newsletter_changed"))
+  }
+  return true
+}
+
+// =========================================================================
 // 8. CHAPTER INFO & ABOUT CONTENT CMS (`settings/chapter_info`)
 // =========================================================================
 

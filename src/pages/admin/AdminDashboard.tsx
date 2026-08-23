@@ -33,6 +33,8 @@ import {
   saveMembershipContent,
   MembershipContentData,
   FAQItem,
+  useNewsletterSubscribers,
+  deleteNewsletterSubscriber,
 } from "@/firebase/firestore"
 import { isOfficialSSNEmail } from "@/firebase/adminConfig"
 import { solid, tint, navySolid } from "@/styles/colors"
@@ -49,6 +51,7 @@ type TabKey =
   | "about_cms"
   | "membership_cms"
   | "inquiries"
+  | "newsletter"
   | "applications"
   | "admins"
   | "activity_log"
@@ -70,9 +73,12 @@ export default function AdminDashboard() {
   const { emails: allowlistEmails, records: adminRecords, addAdmin, removeAdmin } = useAdminAllowlist()
   const { announcements, loading: announcementsLoading } = useAnnouncements()
   const { submissions, loading: submissionsLoading } = useContactSubmissions()
+  const { subscribers, loading: subscribersLoading } = useNewsletterSubscribers()
   const { logs } = useActivityLogs()
-  const { chapterInfo, saveChapterInfo: updateChapterInfo } = useChapterInfo()
-  const { membershipContent, saveMembershipContent: updateMembershipContent } = useMembershipContent()
+  const { chapterInfo } = useChapterInfo()
+  const { membershipContent } = useMembershipContent()
+  const updateChapterInfo = saveChapterInfo
+  const updateMembershipContent = saveMembershipContent
 
   // Search & Filter States
   const [eventSearch, setEventSearch] = useState("")
@@ -727,6 +733,26 @@ export default function AdminDashboard() {
                     {pendingInquiriesCount} new
                   </span>
                 )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("newsletter")
+                  setSidebarOpen(false)
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "newsletter"
+                    ? "bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm"
+                    : "text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Icons.MessageCircle size={16} />
+                  <span>Newsletter</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-800 text-slate-300">
+                  {subscribers.length}
+                </span>
               </button>
 
               <button
@@ -1975,6 +2001,76 @@ export default function AdminDashboard() {
                   ))
                 )}
               </div>
+            </div>
+          )}
+
+          {/* =====================================================================
+              TAB 8.5: NEWSLETTER SUBSCRIBERS
+             ===================================================================== */}
+          {activeTab === "newsletter" && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-white">
+                    Newsletter Subscribers
+                  </h2>
+                  <p className="font-sans-ui text-xs text-slate-400">
+                    Emails collected from the footer signup form. {subscribers.length} total.
+                  </p>
+                </div>
+                {subscribers.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const csv = "email,subscribed_at\n" + subscribers.map(s => `${s.email},${s.timestamp}`).join("\n")
+                      const blob = new Blob([csv], { type: "text/csv" })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement("a")
+                      a.href = url
+                      a.download = "newsletter_subscribers.csv"
+                      a.click()
+                      URL.revokeObjectURL(url)
+                    }}
+                    className="px-3.5 py-2 rounded-xl text-xs font-sans-ui font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-colors cursor-pointer"
+                  >
+                    Export CSV
+                  </button>
+                )}
+              </div>
+
+              {subscribersLoading ? (
+                <div className="p-12 rounded-3xl bg-slate-900/60 border border-slate-800 text-center text-xs text-slate-400">
+                  Loading subscribers...
+                </div>
+              ) : subscribers.length === 0 ? (
+                <div className="p-12 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-3">
+                  <Icons.MessageCircle size={32} className="text-slate-600 mx-auto" />
+                  <h4 className="font-display font-bold text-white">No Subscribers Yet</h4>
+                  <p className="text-xs text-slate-400">Emails submitted via the site footer will appear here.</p>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-slate-800 overflow-hidden">
+                  <div className="divide-y divide-slate-800">
+                    {subscribers.map((sub) => (
+                      <div key={sub.id} className="flex items-center justify-between gap-3 p-4 bg-slate-900/60 hover:bg-slate-900 transition-colors">
+                        <span className="font-mono text-xs text-slate-200 truncate">{sub.email}</span>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-[11px] text-slate-500">{new Date(sub.timestamp).toLocaleDateString()}</span>
+                          <button
+                            onClick={async () => {
+                              await deleteNewsletterSubscriber(sub.id)
+                              showToast("Subscriber removed", "success")
+                            }}
+                            className="p-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/15"
+                            title="Remove Subscriber"
+                          >
+                            <Icons.Trash size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

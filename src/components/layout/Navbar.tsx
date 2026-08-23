@@ -1,16 +1,29 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, NavLink, useLocation } from "react-router-dom"
 import { navLinks } from "@/data/ssit"
 import { ThemeToggle } from "@/components/ui/ThemeToggle"
 import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useAnnouncements } from "@/firebase/firestore"
+import { SearchModal } from "@/components/ui/SearchModal"
 import ssitLogo from "@/assets/images/logo.jpg"
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const location = useLocation()
   const { announcements } = useAnnouncements()
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [])
 
   // Get live active announcement if published by an admin
   const activeAnnouncement = announcements.find(
@@ -107,6 +120,15 @@ export function Navbar() {
 
           {/* Actions: Theme Toggle & Join CTA */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search"
+              className="flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 hover:opacity-80"
+              style={{ color: solid("navy") }}
+            >
+              <Icons.Search size={15} />
+            </button>
+
             <ThemeToggle />
 
             {/* Join CTA */}
@@ -138,48 +160,55 @@ export function Navbar() {
         </div>
 
         {/* Mobile Navigation Drawer */}
-        {open && (
-          <div
-            className="lg:hidden px-5 py-4 space-y-2 border-t"
-            style={{
-              borderTopColor: tint("border", 0.5),
-              background: solid("bg"),
-            }}
-          >
-            <div className="grid grid-cols-2 gap-2 pb-3">
-              {navLinks.map((link) => {
-                const isActive = location.pathname === link.to
-                return (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    onClick={() => setOpen(false)}
-                    className="px-3 py-2.5 rounded-lg text-xs font-sans-ui uppercase tracking-wider font-semibold text-center transition-colors"
-                    style={{
-                      background: isActive ? navySolid : solid("bgWarm"),
-                      color: isActive ? "#ffffff" : solid("ink"),
-                      border: `1px solid ${tint("border", 0.5)}`,
-                    }}
-                  >
-                    {link.label}
-                  </NavLink>
-                )
-              })}
-            </div>
+        <div
+          className="lg:hidden grid transition-[grid-template-rows] duration-300 ease-in-out"
+          style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+        >
+          <div className="overflow-hidden">
+            <div
+              className="px-5 py-4 space-y-2 border-t"
+              style={{
+                borderTopColor: tint("border", 0.5),
+                background: solid("bg"),
+              }}
+            >
+              <div className="grid grid-cols-2 gap-2 pb-3">
+                {navLinks.map((link) => {
+                  const isActive = location.pathname === link.to
+                  return (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      onClick={() => setOpen(false)}
+                      className="px-3 py-2.5 rounded-lg text-xs font-sans-ui uppercase tracking-wider font-semibold text-center transition-colors"
+                      style={{
+                        background: isActive ? navySolid : solid("bgWarm"),
+                        color: isActive ? "#ffffff" : solid("ink"),
+                        border: `1px solid ${tint("border", 0.5)}`,
+                      }}
+                    >
+                      {link.label}
+                    </NavLink>
+                  )
+                })}
+              </div>
 
-            <div className="pt-2 border-t flex flex-col gap-2" style={{ borderTopColor: tint("border", 0.5) }}>
-              <Link
-                to="/membership"
-                onClick={() => setOpen(false)}
-                className="w-full py-2.5 rounded-lg text-center font-sans-ui text-xs uppercase tracking-wider font-semibold text-white"
-                style={{ background: navySolid }}
-              >
-                Join Chapter
-              </Link>
+              <div className="pt-2 border-t flex flex-col gap-2" style={{ borderTopColor: tint("border", 0.5) }}>
+                <Link
+                  to="/membership"
+                  onClick={() => setOpen(false)}
+                  className="w-full py-2.5 rounded-lg text-center font-sans-ui text-xs uppercase tracking-wider font-semibold text-white"
+                  style={{ background: navySolid }}
+                >
+                  Join Chapter
+                </Link>
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   )
 }

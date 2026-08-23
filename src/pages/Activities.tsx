@@ -10,12 +10,17 @@ import {
 import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useEvents } from "@/firebase/firestore"
+import { useDocumentTitle } from "@/hooks/useDocumentTitle"
+import { EmptyState } from "@/components/ui/EmptyState"
+import { CardSkeletonGrid } from "@/components/ui/Skeleton"
 
 export default function Activities() {
-  const { events } = useEvents()
+  useDocumentTitle("Activities")
+  const { events, loading: eventsLoading } = useEvents()
   const [activeTab, setActiveTab] = useState<"calendar" | "flagship" | "publications" | "chapterEvents">("calendar")
   const [calendarSearch, setCalendarSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
+  const [eventsView, setEventsView] = useState<"upcoming" | "past">("upcoming")
 
   const filteredCalendar = conferenceCalendar2025.filter(ev =>
     ev.name.toLowerCase().includes(calendarSearch.toLowerCase()) ||
@@ -23,6 +28,8 @@ export default function Activities() {
   )
 
   const filteredEvents = events.filter(e => {
+    if (eventsView === "upcoming" && e.status !== "upcoming") return false
+    if (eventsView === "past" && e.status !== "completed") return false
     if (selectedCategory === "All") return true
     return e.category === selectedCategory
   })
@@ -92,6 +99,13 @@ export default function Activities() {
               </div>
             </div>
 
+            {filteredCalendar.length === 0 ? (
+              <EmptyState
+                icon={Icons.Calendar}
+                title="No conferences match your search"
+                message={`Nothing found for "${calendarSearch}". Try a different conference name or country.`}
+              />
+            ) : (
             <div
               className="rounded-2xl border overflow-hidden shadow-sm"
               style={{ borderColor: tint("border", 0.6) }}
@@ -137,6 +151,7 @@ export default function Activities() {
                 </table>
               </div>
             </div>
+            )}
           </div>
         )}
 
@@ -210,8 +225,37 @@ export default function Activities() {
                   </button>
                 ))}
               </div>
+
+              <div className="flex gap-1 p-1 rounded-xl border" style={{ borderColor: tint("border", 0.6), background: solid("bgWarm") }}>
+                {(["upcoming", "past"] as const).map((view) => (
+                  <button
+                    key={view}
+                    onClick={() => setEventsView(view)}
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-sans-ui font-semibold uppercase tracking-wider transition-all"
+                    style={{
+                      background: eventsView === view ? navySolid : "transparent",
+                      color: eventsView === view ? "#ffffff" : solid("muted"),
+                    }}
+                  >
+                    {view === "upcoming" ? "Upcoming" : "Past Events"}
+                  </button>
+                ))}
+              </div>
             </div>
 
+            {eventsLoading ? (
+              <CardSkeletonGrid count={3} />
+            ) : filteredEvents.length === 0 ? (
+              <EmptyState
+                icon={eventsView === "past" ? Icons.Clock : Icons.Calendar}
+                title={eventsView === "past" ? "No past events archived yet" : "No upcoming events in this category"}
+                message={
+                  eventsView === "past"
+                    ? "Completed chapter events will show up here once they've wrapped."
+                    : "Try a different category, or check back soon — new events are added regularly."
+                }
+              />
+            ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
                 <div
@@ -274,6 +318,7 @@ export default function Activities() {
                 </div>
               ))}
             </div>
+            )}
           </div>
         )}
 

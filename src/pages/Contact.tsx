@@ -5,8 +5,10 @@ import { contact } from "@/data/ssit"
 import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { submitContactInquiry } from "@/firebase/firestore"
+import { useDocumentTitle } from "@/hooks/useDocumentTitle"
 
 export default function Contact() {
+  useDocumentTitle("Contact")
   const [formData, setFormData] = useState({
     name: "",
     email: "",

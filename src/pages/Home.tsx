@@ -6,6 +6,8 @@ import { orgInfo, technicalActivityAreas } from "@/data/ssit"
 import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useEvents } from "@/firebase/firestore"
+import { EmptyState } from "@/components/ui/EmptyState"
+import { CardSkeletonGrid } from "@/components/ui/Skeleton"
 
 // Interactive Ethics Dilemma Widget
 const DILEMMAS = [
@@ -39,7 +41,7 @@ const DILEMMAS = [
 ]
 
 export default function Home() {
-  const { events } = useEvents()
+  const { events, loading: eventsLoading } = useEvents()
   const upcomingEvents = events.filter(e => e.status === "upcoming")
   const [selectedDilemmaIdx, setSelectedDilemmaIdx] = useState(0)
   const [userVoted, setUserVoted] = useState<Record<string, "A" | "B">>({})
@@ -153,6 +155,24 @@ export default function Home() {
             </Link>
           </div>
 
+          {eventsLoading ? (
+            <CardSkeletonGrid count={3} />
+          ) : upcomingEvents.length === 0 ? (
+            <EmptyState
+              icon={Icons.Calendar}
+              title="No upcoming events right now"
+              message="New workshops and conferences are added regularly — check the full calendar or follow our socials for updates."
+              action={
+                <Link
+                  to="/activities"
+                  className="mt-1 px-4 py-2 rounded-lg font-sans-ui text-xs uppercase tracking-wider font-semibold text-white"
+                  style={{ background: navySolid }}
+                >
+                  View Full Calendar
+                </Link>
+              }
+            />
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {upcomingEvents.slice(0, 3).map((event) => (
               <div
@@ -224,6 +244,7 @@ export default function Home() {
               </div>
             ))}
           </div>
+          )}
         </div>
       </section>
 
