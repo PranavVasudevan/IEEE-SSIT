@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { SectionLabel } from "@/components/ui/SectionLabel"
 import {
   conferenceSeries,
@@ -6,260 +7,333 @@ import {
   standardsNote,
   socialChannelsNote,
 } from "@/data/ssit"
-import { solid, tint } from "@/styles/colors"
+import { solid, tint, navySolid } from "@/styles/colors"
+import { Icons } from "@/components/ui/Icons"
+import { useEvents } from "@/firebase/firestore"
 
 export default function Activities() {
-  return (
-    <div className="pt-32">
-      <section className="py-16 px-3 md:px-8">
-        <div className="max-w-[1600px] mx-auto">
-          <SectionLabel>What we do</SectionLabel>
-          <h1
-            className="font-display mb-6"
-            style={{
-              fontSize: "clamp(2rem, 4.5vw, 3.5rem)",
-              fontWeight: 700,
-              lineHeight: 1.1,
-              color: solid("ink"),
-            }}
-          >
-            Conferences, publications & standards
-          </h1>
-          <p
-            className="font-sans-ui leading-relaxed max-w-2xl"
-            style={{ color: solid("muted"), fontSize: "1rem", fontWeight: 300 }}
-          >
-            IEEE SSIT sponsors and co-sponsors a recurring series of
-            international conferences, peer-reviewed publications, and standards
-            work. Chapter members gain direct access to all of it.
-          </p>
-        </div>
-      </section>
+  const { events } = useEvents()
+  const [activeTab, setActiveTab] = useState<"calendar" | "flagship" | "publications" | "chapterEvents">("calendar")
+  const [calendarSearch, setCalendarSearch] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("All")
 
-      {/* Conference series */}
-      <section
-        className="py-20 px-3 md:px-8"
-        style={{ background: solid("bgWarm") }}
-      >
-        <div className="max-w-[1600px] mx-auto">
-          <h2
-            className="font-display mb-10"
-            style={{
-              fontSize: "clamp(1.5rem, 3vw, 2.25rem)",
-              fontWeight: 700,
-              color: solid("ink"),
-            }}
-          >
-            Conference series
-          </h2>
-          <div
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px"
-            style={{
-              border: `1px solid ${tint("border", 0.6)}`,
-              borderRadius: "16px",
-              overflow: "hidden",
-            }}
-          >
-            {conferenceSeries.map((c) => (
-              <div
-                key={c.acronym}
-                className="p-7"
-                style={{ background: solid("bg") }}
-              >
-                <span
-                  className="inline-block px-2.5 py-1 text-xs font-sans-ui rounded-full mb-4"
+  const filteredCalendar = conferenceCalendar2025.filter(ev =>
+    ev.name.toLowerCase().includes(calendarSearch.toLowerCase()) ||
+    ev.location.toLowerCase().includes(calendarSearch.toLowerCase())
+  )
+
+  const filteredEvents = events.filter(e => {
+    if (selectedCategory === "All") return true
+    return e.category === selectedCategory
+  })
+
+  return (
+    <div className="pt-28 pb-20 px-4 md:px-8 space-y-12">
+      <div className="max-w-[1600px] mx-auto space-y-8">
+        {/* Header & Sub-Tabs */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b" style={{ borderColor: tint("border", 0.6) }}>
+          <div>
+            <SectionLabel>Society Programs & Research</SectionLabel>
+            <h1 className="font-display text-3xl md:text-5xl font-bold" style={{ color: solid("ink") }}>
+              Conferences, Events & Publications
+            </h1>
+          </div>
+
+          {/* Quick Sub-Tabs */}
+          <div className="flex flex-wrap gap-1.5 p-1.5 rounded-2xl border" style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}>
+            {[
+              { id: "calendar", label: "2025 Global Calendar", icon: Icons.Calendar },
+              { id: "flagship", label: "Flagship Series", icon: Icons.Sparkles },
+              { id: "chapterEvents", label: "Chapter Events", icon: Icons.Users },
+              { id: "publications", label: "Publications & Standards", icon: Icons.BookOpen },
+            ].map((tab) => {
+              const IconComponent = tab.icon
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-sans-ui font-semibold transition-all duration-200"
                   style={{
-                    background: tint("navy", 0.08),
-                    color: solid("navy"),
-                    border: `1px solid ${tint("navy", 0.15)}`,
+                    background: isActive ? navySolid : "transparent",
+                    color: isActive ? "#ffffff" : solid("muted"),
+                    boxShadow: isActive ? `0 2px 8px ${tint("navy", 0.25)}` : "none",
                   }}
                 >
-                  {c.acronym}
-                </span>
-                <h3
-                  className="font-display font-semibold mb-1"
-                  style={{
-                    fontSize: "1rem",
-                    color: solid("ink"),
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {c.name}
-                </h3>
-                {c.note && (
-                  <p
-                    className="font-sans-ui text-xs mt-2"
-                    style={{ color: solid("gold"), fontWeight: 500 }}
-                  >
-                    {c.note}
-                  </p>
+                  <IconComponent size={13} />
+                  <span>{tab.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Tab 1: 2025 Calendar */}
+        {activeTab === "calendar" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <p className="font-sans-ui text-xs md:text-sm" style={{ color: solid("muted") }}>
+                Global IEEE SSIT sponsored and co-sponsored international conferences across 2025.
+              </p>
+              <div className="relative max-w-xs w-full">
+                <input
+                  type="text"
+                  placeholder="Search by conference or country..."
+                  value={calendarSearch}
+                  onChange={(e) => setCalendarSearch(e.target.value)}
+                  className="w-full pl-3 pr-8 py-2 rounded-xl text-xs font-sans-ui border outline-none focus:ring-2"
+                  style={{ background: solid("bgWarm"), borderColor: tint("border", 0.8), color: solid("ink") }}
+                />
+                {calendarSearch && (
+                  <button onClick={() => setCalendarSearch("")} className="absolute right-2.5 top-2.5 text-xs text-slate-400">
+                    ✕
+                  </button>
                 )}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            </div>
 
-      {/* 2025 calendar reference */}
-      <section className="py-20 px-3 md:px-8">
-        <div className="max-w-[1600px] mx-auto">
-          <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
-            <h2
-              className="font-display"
-              style={{
-                fontSize: "clamp(1.5rem, 3vw, 2.25rem)",
-                fontWeight: 700,
-                color: solid("ink"),
-              }}
+            <div
+              className="rounded-2xl border overflow-hidden shadow-sm"
+              style={{ borderColor: tint("border", 0.6) }}
             >
-              2025 global conference calendar
-            </h2>
-            <span
-              className="font-sans-ui text-xs"
-              style={{ color: solid("muted"), fontWeight: 300 }}
-            >
-              Reference — see technologyandsociety.org for the current schedule
-            </span>
-          </div>
-          <div
-            className="flex flex-col gap-0"
-            style={{
-              border: `1px solid ${tint("border", 0.6)}`,
-              borderRadius: "16px",
-              overflow: "hidden",
-            }}
-          >
-            {conferenceCalendar2025.map((ev, i) => (
-              <div
-                key={ev.name}
-                className="flex items-center gap-6 p-5 flex-wrap"
-                style={{
-                  background: solid("bgWarm"),
-                  borderBottom:
-                    i < conferenceCalendar2025.length - 1
-                      ? `1px solid ${tint("border", 0.5)}`
-                      : "none",
-                }}
-              >
-                <span
-                  className="font-sans-ui text-xs shrink-0 w-24"
-                  style={{ color: solid("navy"), fontWeight: 500 }}
-                >
-                  {ev.dates}
-                </span>
-                <span
-                  className="font-display font-semibold flex-1 min-w-[200px]"
-                  style={{ fontSize: "0.95rem", color: solid("ink") }}
-                >
-                  {ev.name}
-                </span>
-                <span
-                  className="font-sans-ui text-xs"
-                  style={{ color: solid("muted"), fontWeight: 300 }}
-                >
-                  {ev.location}
-                </span>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-sans-ui text-xs">
+                  <thead style={{ background: solid("bgWarm"), borderBottom: `1px solid ${tint("border", 0.6)}` }}>
+                    <tr>
+                      <th className="p-4 font-bold uppercase tracking-wider text-[11px]" style={{ color: solid("navy") }}>Dates</th>
+                      <th className="p-4 font-bold uppercase tracking-wider text-[11px]" style={{ color: solid("navy") }}>Conference Name</th>
+                      <th className="p-4 font-bold uppercase tracking-wider text-[11px]" style={{ color: solid("navy") }}>Location</th>
+                      <th className="p-4 font-bold uppercase tracking-wider text-[11px] text-right" style={{ color: solid("navy") }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y" style={{ borderColor: tint("border", 0.4) }}>
+                    {filteredCalendar.map((ev, i) => (
+                      <tr key={i} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ background: solid("bg") }}>
+                        <td className="p-4 font-mono font-medium whitespace-nowrap" style={{ color: solid("gold") }}>
+                          {ev.dates}
+                        </td>
+                        <td className="p-4 font-display font-semibold text-sm" style={{ color: solid("ink") }}>
+                          {ev.name}
+                        </td>
+                        <td className="p-4 whitespace-nowrap" style={{ color: solid("muted") }}>
+                          📍 {ev.location}
+                        </td>
+                        <td className="p-4 text-right whitespace-nowrap">
+                          <a
+                            href="https://www.technologyandsociety.org"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold border hover:bg-black/5 dark:hover:bg-white/5"
+                            style={{ borderColor: tint("border", 0.8), color: solid("ink") }}
+                          >
+                            Details <Icons.ExternalLink size={11} />
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      </section>
+        )}
 
-      {/* Publications */}
-      <section
-        className="py-20 px-3 md:px-8"
-        style={{ background: solid("bgWarm") }}
-      >
-        <div className="max-w-[1600px] mx-auto">
-          <h2
-            className="font-display mb-10"
-            style={{
-              fontSize: "clamp(1.5rem, 3vw, 2.25rem)",
-              fontWeight: 700,
-              color: solid("ink"),
-            }}
-          >
-            Publications
-          </h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {publications.map((p) => (
-              <div
-                key={p.title}
-                className="p-6 rounded-xl"
-                style={{
-                  background: solid("bg"),
-                  border: `1px solid ${tint("border", 0.6)}`,
-                }}
-              >
-                <h3
-                  className="font-display font-semibold mb-2"
-                  style={{ fontSize: "1rem", color: solid("ink") }}
+        {/* Tab 2: Flagship Conferences */}
+        {activeTab === "flagship" && (
+          <div className="space-y-6">
+            <p className="font-sans-ui text-sm" style={{ color: solid("muted") }}>
+              IEEE SSIT's marquee conference series tackling global challenges from digital inclusion to ethical AI standards.
+            </p>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {conferenceSeries.map((c) => (
+                <div
+                  key={c.acronym}
+                  className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm"
+                  style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
                 >
-                  {p.title}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-sans-ui font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300">
+                        {c.acronym}
+                      </span>
+                      {c.note && (
+                        <span className="text-[10px] font-sans-ui uppercase tracking-wider font-bold text-amber-500">
+                          ★ Flagship
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-display font-bold text-base leading-snug" style={{ color: solid("ink") }}>
+                      {c.name}
+                    </h3>
+                  </div>
+
+                  <div className="pt-3 border-t flex items-center justify-between text-xs" style={{ borderColor: tint("border", 0.5) }}>
+                    <span className="font-sans-ui text-[11px]" style={{ color: solid("muted") }}>
+                      IEEE TAB / SSIT Sponsor
+                    </span>
+                    <a
+                      href="https://www.technologyandsociety.org"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:underline flex items-center gap-1 font-semibold"
+                      style={{ color: solid("navy") }}
+                    >
+                      Series Hub <Icons.ExternalLink size={11} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Chapter Events (Firestore Synced) */}
+        {activeTab === "chapterEvents" && (
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap gap-2">
+                {["All", "Workshop", "Symposium", "Hackathon", "Panel Discussion"].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-sans-ui font-semibold transition-all ${
+                      selectedCategory === cat
+                        ? "bg-amber-500 text-slate-950 shadow-sm"
+                        : "border text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5"
+                    }`}
+                    style={{ borderColor: tint("border", 0.6) }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="rounded-2xl border overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-xl"
+                  style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
+                >
+                  {event.image && (
+                    <div className="h-44 overflow-hidden relative">
+                      <img src={event.image} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute top-3 left-3 flex gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-sans-ui font-semibold text-white bg-black/60 backdrop-blur-md">
+                          {event.category}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-sans-ui font-bold uppercase tracking-wider ${
+                          event.status === "upcoming" ? "bg-emerald-500/90 text-white" : "bg-slate-700/90 text-slate-200"
+                        }`}>
+                          {event.status}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-sans-ui" style={{ color: solid("gold") }}>
+                        <Icons.Calendar size={13} />
+                        <span className="font-medium">{event.date}</span>
+                      </div>
+                      <h3 className="font-display font-bold text-base" style={{ color: solid("ink") }}>
+                        {event.title}
+                      </h3>
+                      <p className="font-sans-ui text-xs leading-relaxed line-clamp-3" style={{ color: solid("muted") }}>
+                        {event.description}
+                      </p>
+                      {event.speaker && (
+                        <p className="font-sans-ui text-[11px] font-medium" style={{ color: solid("navy") }}>
+                          🎤 {event.speaker}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="pt-3 border-t flex items-center justify-between text-xs" style={{ borderColor: tint("border", 0.5) }}>
+                      <span className="text-[11px]" style={{ color: solid("muted") }}>
+                        📍 {event.location}
+                      </span>
+                      {event.registerUrl && (
+                        <a
+                          href={event.registerUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-lg text-xs font-sans-ui font-semibold text-white transition-opacity hover:opacity-90"
+                          style={{ background: navySolid }}
+                        >
+                          Register
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Publications & Standards */}
+        {activeTab === "publications" && (
+          <div className="space-y-8">
+            <div className="grid md:grid-cols-3 gap-6">
+              {publications.map((p) => (
+                <div
+                  key={p.title}
+                  className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm"
+                  style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
+                >
+                  <div className="space-y-2">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                      IEEE Publication
+                    </span>
+                    <h3 className="font-display font-bold text-lg leading-snug" style={{ color: solid("ink") }}>
+                      {p.title}
+                    </h3>
+                    <p className="font-sans-ui text-xs leading-relaxed" style={{ color: solid("muted") }}>
+                      {p.desc}
+                    </p>
+                  </div>
+                  <div className="pt-3 border-t" style={{ borderColor: tint("border", 0.5) }}>
+                    <a
+                      href="https://ieeexplore.ieee.org"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-sans-ui font-semibold hover:underline"
+                      style={{ color: solid("navy") }}
+                    >
+                      Browse on IEEE Xplore <Icons.ExternalLink size={12} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Standards & Channels banner */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="p-6 md:p-8 rounded-3xl border space-y-3" style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}>
+                <h3 className="font-display font-bold text-lg" style={{ color: solid("ink") }}>
+                  Ethically Aligned Standards
                 </h3>
-                <p
-                  className="font-sans-ui leading-relaxed"
-                  style={{
-                    color: solid("muted"),
-                    fontSize: "0.875rem",
-                    fontWeight: 300,
-                  }}
-                >
-                  {p.desc}
+                <p className="font-sans-ui text-xs leading-relaxed" style={{ color: solid("muted") }}>
+                  {standardsNote} SSIT members participate directly in standard-setting committees on AI transparency, biometric safety, and digital ethics.
                 </p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Standards + social */}
-      <section className="py-20 px-3 md:px-8">
-        <div className="w-full grid md:grid-cols-2 gap-8">
-          <div
-            className="p-8 rounded-xl"
-            style={{ border: `1px solid ${tint("border", 0.6)}` }}
-          >
-            <p
-              className="font-sans-ui text-xs uppercase tracking-widest mb-3"
-              style={{ color: solid("navy"), letterSpacing: "0.1em" }}
-            >
-              Standards
-            </p>
-            <p
-              className="font-sans-ui leading-relaxed"
-              style={{
-                color: solid("ink"),
-                fontSize: "0.9375rem",
-                fontWeight: 300,
-              }}
-            >
-              {standardsNote}
-            </p>
+              <div className="p-6 md:p-8 rounded-3xl border space-y-3" style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}>
+                <h3 className="font-display font-bold text-lg" style={{ color: solid("ink") }}>
+                  Multimedia & Social Channels
+                </h3>
+                <p className="font-sans-ui text-xs leading-relaxed" style={{ color: solid("muted") }}>
+                  {socialChannelsNote} Catch chapter recordings, student tech talks, and podcasts covering socio-technical issues.
+                </p>
+              </div>
+            </div>
           </div>
-          <div
-            className="p-8 rounded-xl"
-            style={{ border: `1px solid ${tint("border", 0.6)}` }}
-          >
-            <p
-              className="font-sans-ui text-xs uppercase tracking-widest mb-3"
-              style={{ color: solid("navy"), letterSpacing: "0.1em" }}
-            >
-              Social channels
-            </p>
-            <p
-              className="font-sans-ui leading-relaxed"
-              style={{
-                color: solid("ink"),
-                fontSize: "0.9375rem",
-                fontWeight: 300,
-              }}
-            >
-              {socialChannelsNote}
-            </p>
-          </div>
-        </div>
-      </section>
+        )}
+      </div>
     </div>
   )
 }

@@ -1,133 +1,146 @@
-import conferencePhoto from "@/assets/images/conference-photo.png"
+import { useState } from "react"
 import { SectionLabel } from "@/components/ui/SectionLabel"
 import { solid, tint } from "@/styles/colors"
-
-const photos = [
-  {
-    url: "https://images.unsplash.com/photo-1606761568499-6d2451b23c66?w=600&h=400&fit=crop&auto=format",
-    alt: "Students at computer workstations during a session",
-    label: "Technical Workshop",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=400&fit=crop&auto=format",
-    alt: "Engineering student at a laptop",
-    label: "Research Session",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1778876088509-982115d463ef?w=600&h=400&fit=crop&auto=format",
-    alt: "Audience in lecture hall",
-    label: "Chapter Symposium",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&h=800&fit=crop&auto=format",
-    alt: "LED technology panel",
-    label: "Technology Expo",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1782388713336-fcb8aa6db8f0?w=600&h=400&fit=crop&auto=format",
-    alt: "Two students collaborating at laptop",
-    label: "Team Collaboration",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=600&h=400&fit=crop&auto=format",
-    alt: "Student in lab coat with engineering equipment",
-    label: "Lab Session",
-  },
-]
+import { Icons } from "@/components/ui/Icons"
+import { useGallery, GalleryPhoto } from "@/firebase/firestore"
 
 export default function Gallery() {
-  return (
-    <div className="pt-32 pb-20 px-3 md:px-8">
-      <div className="max-w-[1600px] mx-auto">
-        <SectionLabel>Gallery</SectionLabel>
-        <h1
-          className="font-display mb-12"
-          style={{
-            fontSize: "clamp(2rem, 4.5vw, 3.25rem)",
-            fontWeight: 700,
-            lineHeight: 1.1,
-            color: solid("ink"),
-          }}
-        >
-          Life at SSIT
-        </h1>
+  const { gallery } = useGallery()
+  const [selectedFilter, setSelectedFilter] = useState<string>("All")
+  const [activePhoto, setActivePhoto] = useState<GalleryPhoto | null>(null)
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {photos.map((photo, i) => (
+  const categories = ["All", "Workshop", "Hackathon", "Symposium", "Campus"]
+
+  const filteredPhotos = gallery.filter(photo => {
+    if (selectedFilter === "All") return true
+    return photo.category === selectedFilter
+  })
+
+  return (
+    <div className="pt-28 pb-20 px-4 md:px-8 space-y-12">
+      <div className="max-w-[1600px] mx-auto space-y-8">
+        {/* Header & Category Filter */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b" style={{ borderColor: tint("border", 0.6) }}>
+          <div>
+            <SectionLabel>Photo Gallery</SectionLabel>
+            <h1 className="font-display text-3xl md:text-5xl font-bold" style={{ color: solid("ink") }}>
+              Life at IEEE SSIT SSN
+            </h1>
+            <p className="font-sans-ui text-xs md:text-sm mt-1" style={{ color: solid("muted") }}>
+              Glimpses from workshops, symposiums, hackathons, and student technical sessions.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedFilter(cat)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-sans-ui font-semibold transition-all ${
+                  selectedFilter === cat
+                    ? "bg-amber-500 text-slate-950 shadow-sm"
+                    : "border text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5"
+                }`}
+                style={{ borderColor: tint("border", 0.6) }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Gallery Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPhotos.map((photo) => (
             <div
-              key={i}
-              className={`group relative overflow-hidden rounded-xl ${
-                i === 3 ? "row-span-2" : ""
-              }`}
+              key={photo.id}
+              onClick={() => setActivePhoto(photo)}
+              className="group relative overflow-hidden rounded-2xl border cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300"
               style={{
-                border: `1px solid ${tint("border", 0.5)}`,
-                boxShadow: `0 2px 12px ${tint("black", 0.04)}`,
+                borderColor: tint("border", 0.6),
+                background: solid("bgWarm"),
               }}
             >
-              <img
-                src={photo.url}
-                alt={photo.alt}
-                className={`w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-                  i === 3 ? "h-full min-h-[400px]" : "h-48 md:h-52"
-                }`}
-              />
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3"
-                style={{
-                  background: `linear-gradient(to top, ${tint("navy", 0.75)} 0%, transparent 60%)`,
-                }}
-              >
-                <span
-                  className="font-sans-ui text-xs text-white"
-                  style={{ fontWeight: 400 }}
-                >
-                  {photo.label}
+              <div className="h-60 overflow-hidden relative">
+                <img
+                  src={photo.url}
+                  alt={photo.alt || photo.label}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute top-3 left-3 flex gap-2">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-sans-ui font-semibold text-white bg-black/60 backdrop-blur-md">
+                    {photo.category}
+                  </span>
+                  {photo.date && (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-sans-ui font-semibold text-amber-200 bg-amber-950/70 backdrop-blur-md">
+                      {photo.date}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="font-display font-bold text-sm" style={{ color: solid("ink") }}>
+                    {photo.label}
+                  </h3>
+                  {photo.alt && (
+                    <p className="font-sans-ui text-xs truncate max-w-xs" style={{ color: solid("muted") }}>
+                      {photo.alt}
+                    </p>
+                  )}
+                </div>
+                <span className="p-2 rounded-lg bg-black/5 dark:bg-white/5 text-amber-500 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors">
+                  <Icons.Sparkles size={14} />
                 </span>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Conference photo — full width feature */}
-        <div
-          className="mt-4 relative rounded-xl overflow-hidden group"
-          style={{ border: `1px solid ${tint("border", 0.5)}` }}
-        >
-          <img
-            src={conferencePhoto}
-            alt="Envision Hackathon at SSN College of Engineering"
-            className="w-full h-64 md:h-80 object-cover transition-transform duration-500 group-hover:scale-105"
-            style={{ objectPosition: "center top" }}
-          />
+        {/* Lightbox Modal */}
+        {activePhoto && (
           <div
-            className="absolute inset-0 flex items-end p-6"
-            style={{
-              background: `linear-gradient(to top, ${tint("navy", 0.85)} 0%, transparent 55%)`,
-            }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            onClick={() => setActivePhoto(null)}
           >
-            <div>
-              <span
-                className="inline-block px-2.5 py-1 text-xs font-sans-ui rounded-full mb-2"
-                style={{
-                  background: tint("gold", 0.9),
-                  color: solid("ink"),
-                  fontWeight: 500,
-                }}
-              >
-                Featured Event
-              </span>
-              <h3
-                className="font-display text-white font-bold"
-                style={{ fontSize: "1.5rem" }}
-              >
-                Envision Hackathon
-              </h3>
-              <p className="font-sans-ui text-white/75 text-sm mt-1">
-                SSN College of Engineering
-              </p>
+            <div
+              className="relative max-w-4xl w-full rounded-3xl overflow-hidden bg-slate-900 border border-white/20 shadow-2xl space-y-4 p-4 md:p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500 text-slate-950">
+                    {activePhoto.category}
+                  </span>
+                  <span className="text-white font-display font-semibold text-lg">
+                    {activePhoto.label}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setActivePhoto(null)}
+                  className="p-2 rounded-xl text-white/70 hover:text-white bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  <Icons.X size={18} />
+                </button>
+              </div>
+
+              <div className="max-h-[65vh] overflow-hidden rounded-xl bg-black flex items-center justify-center">
+                <img
+                  src={activePhoto.url}
+                  alt={activePhoto.label}
+                  className="max-h-[65vh] w-auto object-contain rounded-xl"
+                />
+              </div>
+
+              {activePhoto.alt && (
+                <p className="text-slate-300 font-sans-ui text-xs md:text-sm">
+                  {activePhoto.alt}
+                </p>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

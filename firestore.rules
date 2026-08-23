@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper: Check if user is authenticated with Google
+    function isAuthenticated() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    // Helper: Check if authenticated email is an official SSN domain
+    function isSSNEmail() {
+      return isAuthenticated() && request.auth.token.email.matches('.*@ssn[.]edu[.]in$');
+    }
+
+    // Central approved core admin emails (matches centralized config)
+    function isHardcodedAdmin() {
+      return request.auth.token.email in [
+        'nathaniel2470009@ssn.edu.in',
+        'sharruk2470048@ssn.edu.in',
+        'shriram2410046@ssn.edu.in',
+        'varun2410158@ssn.edu.in',
+        'harshika2410326@ssn.edu.in',
+        'vedika2410432@ssn.edu.in'
+      ];
+    }
+
+    // Check if user is an approved admin via allowlist document or hardcoded list
+    function isApprovedAdmin() {
+      return isSSNEmail() && (
+        isHardcodedAdmin() ||
+        (
+          exists(/databases/$(database)/documents/admins/allowlist) &&
+          request.auth.token.email in get(/databases/$(database)/documents/admins/allowlist).data.emails
+        )
+      );
+    }
+
+    // Admins allowlist document:
+    // - Authenticated users can read (to verify authorization status)
+    // - Only approved admins can update/add new admin emails
+    match /admins/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isApprovedAdmin();
+    }
+
+    // Activity Logs:
+    // - Only approved admins can read and append audit logs
+    match /activity_logs/{logId} {
+      allow read, create: if isApprovedAdmin();
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    // Settings & Content CMS (Chapter Info, Membership Content, FAQs)
+    // - Publicly readable
+    // - Only approved admins can edit
+    match /settings/{document=**} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    // Public Collections (Events, Gallery, Team, Announcements)
+    // - Any visitor can read published chapter content
+    // - Only approved admins can create, update, or delete
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    match /gallery/{photoId} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    match /team/{memberId} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    // Contact Inquiries & Membership Applications:
+    // - Anyone can submit an intake/inquiry (create)
+    // - Only approved admins can view, update status, or delete inquiries
+    match /contact_inquiries/{inquiryId} {
+      allow create: if true;
+      allow read, update, delete: if isApprovedAdmin();
+    }
+
+    // Default deny all other paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

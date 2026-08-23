@@ -1,65 +1,213 @@
-# IEEE SSIT · SSN Student Chapter
+# IEEE SSIT · SSN Student Branch Chapter Portal & Admin CMS
 
-A React and TypeScript web application for the IEEE Society on Social Implications of Technology (SSIT), SSN Student Chapter. Built with Vite and Tailwind CSS v4, and routed with React Router.
+A high-performance React 19 + TypeScript web application and Content Management System (CMS) for the **IEEE Society on Social Implications of Technology (SSIT), SSN College of Engineering Student Branch Chapter**.
 
-## Stack
+---
 
-- React 19 with TypeScript
-- Vite 8 build tooling
-- Tailwind CSS v4 via `@tailwindcss/vite`
-- React Router 7 for client-side routing
-
-## Structure
+## 🏛 Multi-Admin Architecture & Role-Based Access Control (RBAC)
 
 ```
-src/
-  assets/images/       Static image assets (logo, chapter photography)
-  components/
-    layout/             Navbar, Footer, page shell
-    sections/           Reusable homepage sections (Hero, PullQuote, Partners)
-    ui/                 Shared UI primitives (theme toggle, section label, social links)
-  context/              Theme (light/dark) context and provider
-  data/                 Site content, sourced from the IEEE SSIT brochure and membership materials
-  hooks/                Shared React hooks
-  pages/                Route-level page components
-  styles/               Global stylesheet, theme tokens, and color helpers
-  App.tsx               Route definitions
-  main.tsx              Application entry point
-public/                 Static files served as-is (favicon)
-index.html              HTML shell
+                               ┌─────────────────────────────┐
+                               │   Public IEEE-SSIT Portal   │
+                               └──────────────┬──────────────┘
+                                              │
+             ┌─────────────┬──────────────────┼──────────────────┬─────────────┐
+             │             │                  │                  │             │
+          / (Home)      /about           /activities        /membership    /gallery & /contact
+        • Hero & Stats • Mission & Vision • 2025 Calendar    • Benefits     • Filterable Gallery
+        • Announcements• Focus Areas      • Publications     • How to Join  • Interactive Inquiries
+        • Quick Tabs   • Student Team     • Past & Upcoming  • FAQs         • Lightbox Viewer
+                                              │
+                                              ▼
+                                  ┌───────────────────────┐
+                                  │     /admin/login      │
+                                  └───────────┬───────────┘
+                                              │ Google Sign-In (Firebase Auth)
+                                              ▼
+                                  ┌───────────────────────┐
+                                  │   Role Determination  │
+                                  └─────┬───────────┬─────┘
+                     Is @ssn.edu.in     │           │ Non-Admin Account /
+                     AND in Admin List? │           │ Non-SSN Domain
+                                  YES ↙               ↘ NO
+              ┌─────────────────────────┐       ┌─────────────────────────┐
+              │    /admin/dashboard     │       │      Access Denied      │
+              │       (Role: Admin)     │       │       (Role: User)      │
+              └────────────┬────────────┘       └─────────────────────────┘
+                           │
+        ┌──────────────────┼──────────────────┬──────────────────┐
+        │                  │                  │                  │
+     Events Manager    Gallery Manager    Admin Roster      Contact Inbox
+     • Add/Edit/Delete • Photo Uploads   • Central Config   • Submissions
+     • Upcoming/Past   • Categorization  • Student Team     • Status Management
 ```
 
-## Pages
+---
 
-- `/` — Home
-- `/about` — Mission, history, and technical activity areas
-- `/activities` — Conference series, publications, and standards
-- `/membership` — Membership categories and benefits
-- `/gallery` — Chapter photo gallery
-- `/contact` — Contact details, social links, and chapter application form
+## 👥 Approved Core Admin / Developer Team
 
-## Theming
+The following SSN student accounts are configured with **Admin / Developer** permissions:
 
-Colors are defined as CSS custom properties in `src/styles/theme.css`, with light and dark palettes selected by a `data-theme` attribute on the document root. The toggle in the navigation bar switches themes and persists the choice in local storage, defaulting to the visitor's system preference. Dark mode uses a near-black, silver-toned finish rather than a tinted dark blue. A non-inverting `navy-solid` token is used for surfaces that carry fixed white text (buttons, the pull quote panel) so those surfaces stay legible in both themes.
+1. **`nathaniel2470009@ssn.edu.in`** (Nathaniel)
+2. **`sharruk2470048@ssn.edu.in`** (Sharruk)
+3. **`shriram2410046@ssn.edu.in`** (Shriram)
+4. **`varun2410158@ssn.edu.in`** (Varun)
+5. **`harshika2410326@ssn.edu.in`** (Harshika)
+6. **`vedika2410432@ssn.edu.in`** (Vedika)
 
-## Content
+---
 
-Copy in `src/data/ssit.ts` is sourced from the IEEE SSIT 2025 brochure and membership flyer. Chapter social links (`socialLinks` in the same file) and the gallery photo set are placeholders pending the chapter's actual profile links and event photography.
+## 🚀 Environment Setup & Security
 
-## Development
+1. **Copy the example configuration**:
+   ```bash
+   cp .env.example .env
+   ```
+2. **Add your Firebase Web App credentials** in `.env`:
+   ```env
+   VITE_FIREBASE_API_KEY=your_firebase_api_key_here
+   VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   VITE_FIREBASE_APP_ID=your_firebase_app_id
+   ```
+3. **Security Best Practices**:
+   - Never commit `.env` or service-account JSON keys to version control.
+   - Client-side code requires only standard Firebase Web configuration (API key, Project ID).
+   - Server-level security is enforced by Cloud Firestore Security Rules.
+
+---
+
+## ➕ How to Add Additional Admins in the Future
+
+The multi-admin architecture uses a centralized configuration system (`src/firebase/adminConfig.ts`).
+
+To add more student admins later:
+1. Open [`src/firebase/adminConfig.ts`](file:///d:/CLUB/IEEE-SSIT/src/firebase/adminConfig.ts).
+2. Append the new student's official `@ssn.edu.in` email to the `DEFAULT_ADMIN_EMAILS` array:
+   ```typescript
+   export const DEFAULT_ADMIN_EMAILS: string[] = [
+     "nathaniel2470009@ssn.edu.in",
+     "sharruk2470048@ssn.edu.in",
+     "shriram2410046@ssn.edu.in",
+     "varun2410158@ssn.edu.in",
+     "harshika2410326@ssn.edu.in",
+     "vedika2410432@ssn.edu.in",
+     "newstudent24xxxxx@ssn.edu.in", // <-- Add new student email here
+   ]
+   ```
+3. *(Optional)* You can also dynamically add or remove admin emails directly inside the running CMS via the **Admins & Team** tab on `/admin/dashboard`!
+
+---
+
+## 🔐 3-Tier Security & Role Distinction
+
+The portal enforces three distinct user access tiers:
+
+| Tier | Status | Access Level | UI Experience |
+|---|---|---|---|
+| **Unauthenticated Visitor** | Public guest browsing the site | Read-only public pages | Standard navigation; "Admin" lock button in header |
+| **Normal Authenticated User** | Signed in with Google / SSN, but not on Admin list | Read-only public pages | Email chip & Sign-out button in header; `/admin/dashboard` and database writes strictly blocked |
+| **Authorized Admin** | Signed in with approved `@ssn.edu.in` account | Full CMS read & write permissions | "Admin CMS" badge with active emerald dot; full access to `/admin/dashboard` |
+
+---
+
+## 🔒 Firestore Security Rules
+
+Deploy [`firestore.rules`](./firestore.rules) to your Firebase project:
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function isSSNEmail() {
+      return isAuthenticated() && request.auth.token.email.matches('.*@ssn[.]edu[.]in$');
+    }
+
+    function isHardcodedAdmin() {
+      return request.auth.token.email in [
+        'nathaniel2470009@ssn.edu.in',
+        'sharruk2470048@ssn.edu.in',
+        'shriram2410046@ssn.edu.in',
+        'varun2410158@ssn.edu.in',
+        'harshika2410326@ssn.edu.in',
+        'vedika2410432@ssn.edu.in'
+      ];
+    }
+
+    function isApprovedAdmin() {
+      return isSSNEmail() && (
+        isHardcodedAdmin() ||
+        (
+          exists(/databases/$(database)/documents/admins/allowlist) &&
+          request.auth.token.email in get(/databases/$(database)/documents/admins/allowlist).data.emails
+        )
+      );
+    }
+
+    match /admins/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isApprovedAdmin();
+    }
+
+    match /activity_logs/{logId} {
+      allow read, create: if isApprovedAdmin();
+      allow update, delete: if false;
+    }
+
+    match /settings/{document=**} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    match /gallery/{photoId} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    match /team/{memberId} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isApprovedAdmin();
+    }
+
+    match /contact_inquiries/{inquiryId} {
+      allow create: if true;
+      allow read, update, delete: if isApprovedAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+```
+
+---
+
+## 🛠 How to Test Locally
 
 ```bash
-npm install
+# 1. Start the Vite development server
 npm run dev
+
+# 2. Open http://localhost:5173/admin/login in your browser
+# 3. In development mode (import.meta.env.DEV), use the quick test simulator:
+#    - Any of the 6 approved admins (Granted access to /admin/dashboard)
+#    - A normal SSN student (Access Restricted message)
+#    - A non-SSN account (Non-SSN rejected message)
 ```
-
-The dev server runs on port 8443 by default (configurable via the `PORT` environment variable).
-
-## Build
-
-```bash
-npm run build
-npm run preview
-```
-
-Production output is written to `dist/`.
