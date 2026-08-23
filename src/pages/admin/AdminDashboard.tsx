@@ -227,14 +227,17 @@ export default function AdminDashboard() {
   }, [gallery, gallerySearch, galleryCategoryFilter])
 
   const filteredTeam = useMemo(() => {
-    return team.filter((m) => {
-      const matchesSearch =
-        m.name.toLowerCase().includes(teamSearch.toLowerCase()) ||
-        m.role.toLowerCase().includes(teamSearch.toLowerCase()) ||
-        m.department.toLowerCase().includes(teamSearch.toLowerCase())
-      const matchesType = teamTypeFilter === "all" || m.teamType === teamTypeFilter
-      return matchesSearch && matchesType
-    })
+    return team
+      .filter((m) => {
+        const matchesSearch =
+          m.name.toLowerCase().includes(teamSearch.toLowerCase()) ||
+          m.role.toLowerCase().includes(teamSearch.toLowerCase()) ||
+          (m.department && m.department.toLowerCase().includes(teamSearch.toLowerCase())) ||
+          (m.email && m.email.toLowerCase().includes(teamSearch.toLowerCase()))
+        const matchesType = teamTypeFilter === "all" || m.teamType === teamTypeFilter
+        return matchesSearch && matchesType
+      })
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
   }, [team, teamSearch, teamTypeFilter])
 
   const filteredInquiries = useMemo(() => {
@@ -383,6 +386,54 @@ export default function AdminDashboard() {
   }
 
   // --- TEAM ---
+  const getMemberInitials = (name?: string) => {
+    const parts = (name || "").trim().split(/\s+/)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return (name || "TM").slice(0, 2).toUpperCase()
+  }
+
+  const handleTeamImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      showToast("File Size Limit", "warning", "Please select an image under 2MB.")
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setTeamForm(prev => ({ ...prev, photo: reader.result as string }))
+        showToast("Profile image loaded locally.", "success")
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleMoveTeamMember = async (member: TeamMember, direction: "up" | "down") => {
+    const sorted = [...team].sort((a, b) => (a.order || 0) - (b.order || 0))
+    const idx = sorted.findIndex(m => m.id === member.id)
+    if (idx === -1) return
+    if (direction === "up" && idx > 0) {
+      const prev = sorted[idx - 1]
+      const tempOrder = prev.order || idx
+      prev.order = member.order || (idx + 1)
+      member.order = tempOrder
+      await saveTeamMember(member)
+      await saveTeamMember(prev)
+      showToast(`Moved ${member.name} up.`, "info")
+    } else if (direction === "down" && idx < sorted.length - 1) {
+      const next = sorted[idx + 1]
+      const tempOrder = next.order || (idx + 2)
+      next.order = member.order || (idx + 1)
+      member.order = tempOrder
+      await saveTeamMember(member)
+      await saveTeamMember(next)
+      showToast(`Moved ${member.name} down.`, "info")
+    }
+  }
+
   const handleSaveTeam = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!teamForm.name || !teamForm.role) {
@@ -394,7 +445,7 @@ export default function AdminDashboard() {
       showToast(editingTeamMember ? "Team member updated!" : "New team member added to directory!", "success")
       setTeamModalOpen(false)
       setEditingTeamMember(null)
-      setTeamForm({ name: "", role: "", teamType: "Web Development", department: "CSE", year: "3rd Year", email: "", bio: "", photo: "", linkedin: "", github: "", active: true, order: 1 })
+      setTeamForm({ name: "", role: "", teamType: "Web Development", department: "Computer Science & Engineering", year: "3rd Year", email: "", bio: "", photo: "", linkedin: "", github: "", active: true, order: 1 })
     } catch (err: any) {
       showToast("Failed to save team member.", "error")
     }
@@ -1491,7 +1542,7 @@ export default function AdminDashboard() {
                     Student Chapter Team CMS
                   </h2>
                   <p className="font-sans-ui text-xs text-slate-400">
-                    Manage office bearers, web development leads, and technical committee profiles displayed on the About page.
+                    Manage Web Development engineers, executive committee office bearers, and technical leads displayed on the About page.
                   </p>
                 </div>
 
@@ -1508,7 +1559,7 @@ export default function AdminDashboard() {
                       bio: "",
                       photo: "",
                       active: true,
-                      order: 1,
+                      order: team.length + 1,
                     })
                     setTeamModalOpen(true)
                   }}
@@ -1518,52 +1569,142 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* Team Roster Grid */}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredTeam.map((member) => (
-                  <div
-                    key={member.id}
-                    className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-start gap-3.5 justify-between shadow-sm"
-                  >
-                    {member.photo && (
-                      <img
-                        src={member.photo}
-                        alt={member.name}
-                        className="w-12 h-12 rounded-xl object-cover border border-slate-700 shrink-0"
-                      />
-                    )}
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <span className="text-[10px] font-mono uppercase font-bold text-amber-400">
-                        {member.teamType}
-                      </span>
-                      <h4 className="font-display font-bold text-sm text-white truncate">
-                        {member.name}
-                      </h4>
-                      <p className="text-xs text-slate-300 font-sans-ui truncate">{member.role}</p>
-                      <p className="text-[10px] font-mono text-slate-400 truncate">{member.email}</p>
-                    </div>
+              {/* Filters & Search Toolbar */}
+              <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-3">
+                <div className="relative w-full md:w-80">
+                  <Icons.Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, role, department, or email..."
+                    value={teamSearch}
+                    onChange={(e) => setTeamSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white placeholder-slate-500 outline-none focus:border-amber-500/50"
+                  />
+                </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => {
-                          setEditingTeamMember(member)
-                          setTeamForm(member)
-                          setTeamModalOpen(true)
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-white"
-                      >
-                        <Icons.Edit size={13} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTeamClick(member)}
-                        className="p-1.5 text-red-400 hover:text-red-300"
-                      >
-                        <Icons.Trash size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+                  {["all", "Web Development", "Executive", "Events", "Design & Media", "Editorial"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setTeamTypeFilter(type)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                        teamTypeFilter === type
+                          ? "bg-amber-400 text-black font-bold shadow-sm"
+                          : "bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white"
+                      }`}
+                    >
+                      {type === "all" ? "All Groups" : type}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Team Roster Grid */}
+              {filteredTeam.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+                  <Icons.Users size={32} className="mx-auto text-slate-600" />
+                  <h4 className="font-display font-bold text-sm text-slate-300">No team members match the search</h4>
+                  <p className="text-xs text-slate-500">Try adjusting your search criteria or add a new team member.</p>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredTeam.map((member) => (
+                    <div
+                      key={member.id}
+                      className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-3.5 shadow-sm hover:border-slate-700 transition-colors"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        {member.photo && member.photo.trim() !== "" ? (
+                          <img
+                            src={member.photo}
+                            alt={member.name}
+                            className="w-14 h-14 rounded-2xl object-cover border border-slate-700 shrink-0"
+                          />
+                        ) : (
+                          <div
+                            className="w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-base tracking-wider border shadow-sm"
+                            style={{
+                              background: "linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(245, 158, 11, 0.2))",
+                              borderColor: "rgba(245, 158, 11, 0.4)",
+                              color: "rgb(251, 191, 36)",
+                            }}
+                          >
+                            {getMemberInitials(member.name)}
+                          </div>
+                        )}
+
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                              {member.teamType}
+                            </span>
+                            {member.order !== undefined && (
+                              <span className="text-[10px] font-mono text-slate-500">#{member.order}</span>
+                            )}
+                          </div>
+                          <h4 className="font-display font-bold text-sm text-white truncate">
+                            {member.name}
+                          </h4>
+                          <p className="text-xs text-amber-300 font-sans-ui truncate">{member.role}</p>
+                          <p className="text-[11px] text-slate-400 font-sans-ui truncate">
+                            {member.department} • {member.year}
+                          </p>
+                          {member.email && (
+                            <p className="text-[10px] font-mono text-slate-500 truncate">{member.email}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {member.bio && (
+                        <p className="text-[11px] text-slate-400 line-clamp-2 italic font-sans-ui">
+                          "{member.bio}"
+                        </p>
+                      )}
+
+                      <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                        {/* Reorder Buttons */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleMoveTeamMember(member, "up")}
+                            className="p-1 rounded-lg border border-slate-800 text-slate-400 hover:text-amber-400 hover:border-amber-500/30 text-xs"
+                            title="Move Up"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            onClick={() => handleMoveTeamMember(member, "down")}
+                            className="p-1 rounded-lg border border-slate-800 text-slate-400 hover:text-amber-400 hover:border-amber-500/30 text-xs"
+                            title="Move Down"
+                          >
+                            ▼
+                          </button>
+                        </div>
+
+                        {/* Edit and Delete Buttons */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingTeamMember(member)
+                              setTeamForm(member)
+                              setTeamModalOpen(true)
+                            }}
+                            className="px-2.5 py-1 rounded-lg text-xs font-sans-ui font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-colors cursor-pointer"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTeamClick(member)}
+                            className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                            title="Remove Member"
+                          >
+                            <Icons.Trash size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -2434,11 +2575,62 @@ export default function AdminDashboard() {
       {teamModalOpen && (
         <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="max-w-md w-full p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-display font-bold text-xl text-white">
-              {editingTeamMember ? "Edit Team Member" : "Add Team Member"}
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-bold text-xl text-white">
+                {editingTeamMember ? "Edit Team Member" : "Add Team Member"}
+              </h3>
+              <button
+                onClick={() => setTeamModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <Icons.X size={18} />
+              </button>
+            </div>
 
-            <form onSubmit={handleSaveTeam} className="space-y-3">
+            <form onSubmit={handleSaveTeam} className="space-y-4">
+              {/* Live Avatar Preview & Photo Controls */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-4">
+                {teamForm.photo && teamForm.photo.trim() !== "" ? (
+                  <img
+                    src={teamForm.photo}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-2xl object-cover border border-amber-500/40 shrink-0"
+                  />
+                ) : (
+                  <div
+                    className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-xl tracking-wider border shadow-sm"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(245, 158, 11, 0.2))",
+                      borderColor: "rgba(245, 158, 11, 0.4)",
+                      color: "rgb(251, 191, 36)",
+                    }}
+                  >
+                    {getMemberInitials(teamForm.name)}
+                  </div>
+                )}
+
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <span className="text-[10px] font-mono uppercase font-bold text-amber-400 block">
+                    {teamForm.photo ? "Custom Photo Active" : "Clean Placeholder Avatar"}
+                  </span>
+                  <p className="text-[11px] text-slate-400 leading-tight">
+                    {teamForm.photo
+                      ? "Custom photo is set. You can change or reset to placeholder below."
+                      : "No photo set. Clean initials avatar will be shown on the public site."}
+                  </p>
+                  {teamForm.photo && (
+                    <button
+                      type="button"
+                      onClick={() => setTeamForm({ ...teamForm, photo: "" })}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-sans-ui font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 cursor-pointer"
+                    >
+                      Remove Photo & Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Basic Details */}
               <div className="space-y-1">
                 <label className="block text-xs font-semibold text-amber-400">Full Name *</label>
                 <input
@@ -2447,20 +2639,20 @@ export default function AdminDashboard() {
                   placeholder="e.g. S. Varun"
                   value={teamForm.name || ""}
                   onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-amber-400">Role / Position *</label>
+                  <label className="block text-xs font-semibold text-amber-400">Role / Designation *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Frontend Developer"
+                    placeholder="e.g. Web Development Member"
                     value={teamForm.role || ""}
                     onChange={(e) => setTeamForm({ ...teamForm, role: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
                   />
                 </div>
 
@@ -2469,7 +2661,7 @@ export default function AdminDashboard() {
                   <select
                     value={teamForm.teamType}
                     onChange={(e) => setTeamForm({ ...teamForm, teamType: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
                   >
                     <option value="Web Development">Web Development</option>
                     <option value="Executive">Executive</option>
@@ -2486,10 +2678,10 @@ export default function AdminDashboard() {
                   <label className="block text-xs font-semibold text-amber-400">Department</label>
                   <input
                     type="text"
-                    placeholder="e.g. CSE"
+                    placeholder="e.g. Computer Science & Engineering"
                     value={teamForm.department || ""}
                     onChange={(e) => setTeamForm({ ...teamForm, department: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
                   />
                 </div>
 
@@ -2500,44 +2692,84 @@ export default function AdminDashboard() {
                     placeholder="e.g. 3rd Year"
                     value={teamForm.year || ""}
                     onChange={(e) => setTeamForm({ ...teamForm, year: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-amber-400">SSN Email</label>
+                  <input
+                    type="email"
+                    placeholder="e.g. student24xxxxx@ssn.edu.in"
+                    value={teamForm.email || ""}
+                    onChange={(e) => setTeamForm({ ...teamForm, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-amber-400">Display Order</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 1"
+                    value={teamForm.order || 1}
+                    onChange={(e) => setTeamForm({ ...teamForm, order: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
+                  />
+                </div>
+              </div>
+
+              {/* Photo Input (URL or Local File Upload) */}
+              <div className="space-y-2 pt-1 border-t border-slate-800">
+                <label className="block text-xs font-semibold text-amber-400">Profile Photo Options</label>
+                
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-400">Option 1: Image URL</span>
+                  <input
+                    type="url"
+                    placeholder="https://example.com/photo.jpg"
+                    value={teamForm.photo || ""}
+                    onChange={(e) => setTeamForm({ ...teamForm, photo: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-400">Option 2: Upload Image Locally (Dev Mode)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleTeamImageUpload}
+                    className="w-full px-3 py-1.5 rounded-xl text-xs bg-slate-950 border border-slate-800 text-slate-300 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-400 file:text-black hover:file:bg-amber-300 cursor-pointer"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-amber-400">SSN Email</label>
-                <input
-                  type="email"
-                  placeholder="e.g. student@ssn.edu.in"
-                  value={teamForm.email || ""}
-                  onChange={(e) => setTeamForm({ ...teamForm, email: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
+                <label className="block text-xs font-semibold text-amber-400">Bio / Highlights</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Specializes in frontend architectures and cloud operations."
+                  value={teamForm.bio || ""}
+                  onChange={(e) => setTeamForm({ ...teamForm, bio: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-amber-400">Photo URL</label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={teamForm.photo || ""}
-                  onChange={(e) => setTeamForm({ ...teamForm, photo: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setTeamModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-700 text-slate-300"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-700 text-slate-300 hover:bg-slate-800 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-black bg-amber-400 hover:bg-amber-300"
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-black bg-amber-400 hover:bg-amber-300 cursor-pointer"
                 >
                   Save Member
                 </button>

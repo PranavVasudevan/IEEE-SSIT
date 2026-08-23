@@ -6,6 +6,14 @@ import { Icons } from "@/components/ui/Icons"
 import { useTeam, useChapterInfo } from "@/firebase/firestore"
 import ssitLogo from "@/assets/images/logo.jpg"
 
+function getMemberInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+  return name.slice(0, 2).toUpperCase()
+}
+
 export default function About() {
   const [activeTab, setActiveTab] = useState<"overview" | "focus" | "leadership" | "team">("overview")
   const { team } = useTeam()
@@ -252,16 +260,27 @@ export default function About() {
                 {execMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="p-6 rounded-2xl border flex items-start gap-4 shadow-sm"
+                    className="p-6 rounded-2xl border flex items-start gap-4 shadow-sm group hover:border-amber-500/40 transition-colors"
                     style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
                   >
-                    {member.photo && (
+                    {member.photo ? (
                       <img
                         src={member.photo}
                         alt={member.name}
-                        className="w-16 h-16 rounded-xl object-cover shrink-0 border"
+                        className="w-14 h-14 rounded-2xl object-cover shrink-0 border"
                         style={{ borderColor: tint("border", 0.8) }}
                       />
+                    ) : (
+                      <div
+                        className="w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-base tracking-wider border shadow-sm transition-transform group-hover:scale-105"
+                        style={{
+                          background: "linear-gradient(135deg, rgba(30, 58, 138, 0.2), rgba(245, 158, 11, 0.15))",
+                          borderColor: "rgba(245, 158, 11, 0.35)",
+                          color: "rgb(217, 119, 6)",
+                        }}
+                      >
+                        {getMemberInitials(member.name)}
+                      </div>
                     )}
                     <div className="space-y-1 flex-1 min-w-0">
                       <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-blue-500/15 text-blue-700 dark:text-blue-300">
@@ -306,16 +325,27 @@ export default function About() {
                 {webDevMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="p-6 rounded-2xl border flex items-start gap-4 shadow-sm"
+                    className="p-6 rounded-2xl border flex items-start gap-4 shadow-sm group hover:border-amber-500/40 transition-colors"
                     style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
                   >
-                    {member.photo && (
+                    {member.photo ? (
                       <img
                         src={member.photo}
                         alt={member.name}
-                        className="w-16 h-16 rounded-xl object-cover shrink-0 border"
+                        className="w-14 h-14 rounded-2xl object-cover shrink-0 border"
                         style={{ borderColor: tint("border", 0.8) }}
                       />
+                    ) : (
+                      <div
+                        className="w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-base tracking-wider border shadow-sm transition-transform group-hover:scale-105"
+                        style={{
+                          background: "linear-gradient(135deg, rgba(30, 58, 138, 0.2), rgba(245, 158, 11, 0.15))",
+                          borderColor: "rgba(245, 158, 11, 0.35)",
+                          color: "rgb(217, 119, 6)",
+                        }}
+                      >
+                        {getMemberInitials(member.name)}
+                      </div>
                     )}
                     <div className="space-y-1 flex-1 min-w-0">
                       <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300">
