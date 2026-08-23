@@ -29,11 +29,11 @@ export default function App() {
               
               {/* Admin Login Route */}
               <Route path="admin/login" element={<AdminLogin />} />
+            </Route>
 
-              {/* Protected Admin CMS Dashboard */}
-              <Route element={<AdminRoute />}>
-                <Route path="admin/dashboard" element={<AdminDashboard />} />
-              </Route>
+            {/* Protected Admin CMS Dashboard with Dedicated Workspace Layout */}
+            <Route element={<AdminRoute />}>
+              <Route path="admin/dashboard" element={<AdminDashboard />} />
             </Route>
           </Routes>
         </BrowserRouter>

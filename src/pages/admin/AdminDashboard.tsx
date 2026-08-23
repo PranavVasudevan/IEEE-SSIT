@@ -855,6 +855,15 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
+      {/* Mobile Sidebar Backdrop */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden animate-fade-in"
+          aria-hidden="true"
+        />
+      )}
+
       {/* =========================================================================
           2. MAIN CMS CONTENT AREA
          ========================================================================= */}
