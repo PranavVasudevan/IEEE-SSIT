@@ -1123,7 +1123,7 @@ export interface Announcement {
 export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
   {
     id: "ann-2",
-    text: "🚀 SSIT Student Chapter Call for Core Committee & Web Dev Volunteers for Academic Year 2025–26.",
+    text: "SSIT Student Chapter Call for Core Committee & Web Dev Volunteers for Academic Year 2025–26.",
     ctaText: "Join Team",
     ctaUrl: "/membership",
     priority: "normal",

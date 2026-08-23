@@ -91,7 +91,7 @@ export default function Gallery() {
                   )}
                 </div>
                 <span className="p-2 rounded-lg bg-black/5 dark:bg-white/5 text-amber-500 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors">
-                  <Icons.Sparkles size={14} />
+                  <Icons.Gallery size={14} />
                 </span>
               </div>
             </div>

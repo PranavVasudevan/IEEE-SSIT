@@ -70,9 +70,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               </div>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="opacity-60 hover:opacity-100 p-0.5 text-xs transition-opacity"
+                className="opacity-60 hover:opacity-100 p-0.5 transition-opacity"
               >
-                ✕
+                <Icons.X size={12} />
               </button>
             </div>
           )

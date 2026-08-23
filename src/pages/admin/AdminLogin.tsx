@@ -84,12 +84,14 @@ export default function AdminLogin() {
             </p>
 
             {!isSSN ? (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-sans-ui text-left">
-                ⚠️ Non-SSN account detected. Only official <strong>@ssn.edu.in</strong> Google accounts on the approved Web Dev roster can access administrative tools.
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-sans-ui text-left flex items-start gap-2">
+                <Icons.AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <span>Non-SSN account detected. Only official <strong>@ssn.edu.in</strong> Google accounts on the approved Web Dev roster can access administrative tools.</span>
               </div>
             ) : (
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-sans-ui text-left">
-                ℹ️ Your SSN account is authenticated, but not currently registered in the authorized Web Dev Admin roster.
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-sans-ui text-left flex items-start gap-2">
+                <Icons.AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <span>Your SSN account is authenticated, but not currently registered in the authorized Web Dev Admin roster.</span>
               </div>
             )}
           </div>
@@ -97,7 +99,7 @@ export default function AdminLogin() {
           {/* Access Request Action */}
           {accessRequested ? (
             <div className="p-4 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-sans-ui space-y-1">
-              <p className="font-bold">✓ Access Request Transmitted</p>
+              <p className="font-bold flex items-center gap-1.5"><Icons.Check size={13} /> Access Request Transmitted</p>
               <p className="text-[11px]">The SSIT Web Dev leads have been alerted to review your SSN email authorization.</p>
             </div>
           ) : (
@@ -274,8 +276,8 @@ export default function AdminLogin() {
                 className="p-2.5 rounded-xl border text-left font-sans-ui text-xs hover:border-blue-500 transition-all cursor-pointer"
                 style={{ background: solid("bg"), borderColor: tint("border", 0.6) }}
               >
-                <div className="font-bold text-blue-500 text-[11px]">
-                  👤 Normal SSN Student
+                <div className="font-bold text-blue-500 text-[11px] flex items-center gap-1">
+                  <Icons.User size={11} /> Normal SSN Student
                 </div>
                 <div className="text-[10px] font-mono text-slate-400 truncate">otherstudent@ssn.edu.in</div>
               </button>

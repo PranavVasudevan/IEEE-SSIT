@@ -47,7 +47,7 @@ export default function About() {
           <div className="flex flex-wrap gap-1.5 p-1.5 rounded-2xl border" style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}>
             {[
               { id: "overview", label: "Overview & Mission", icon: Icons.About },
-              { id: "focus", label: `Focus Areas (${chapterInfo.focusAreas.length})`, icon: Icons.Sparkles },
+              { id: "focus", label: `Focus Areas (${chapterInfo.focusAreas.length})`, icon: Icons.Target },
               { id: "leadership", label: "Global Leadership", icon: Icons.Globe },
               { id: "team", label: `SSN Chapter Team (${team.length})`, icon: Icons.Users },
             ].map((tab) => {

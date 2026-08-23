@@ -48,6 +48,7 @@ export function Navbar() {
 
       {/* Main Bar */}
       <div
+        className="rounded-b-2xl"
         style={{
           background: "rgba(var(--c-bg-rgb), 0.92)",
           backdropFilter: "blur(18px)",
@@ -114,7 +115,6 @@ export function Navbar() {
               className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-sans-ui text-xs uppercase tracking-[0.12em] font-semibold text-white shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 hover:opacity-95"
               style={{ background: navySolid }}
             >
-              <Icons.Sparkles size={13} />
               Join Chapter
             </Link>
 

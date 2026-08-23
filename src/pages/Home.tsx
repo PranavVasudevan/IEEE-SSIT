@@ -197,8 +197,8 @@ export default function Home() {
                   </div>
 
                   <div className="pt-3 border-t flex items-center justify-between gap-3" style={{ borderColor: tint("border", 0.5) }}>
-                    <span className="font-sans-ui text-[11px] truncate" style={{ color: solid("muted") }}>
-                      📍 {event.location}
+                    <span className="font-sans-ui text-[11px] truncate flex items-center gap-1" style={{ color: solid("muted") }}>
+                      <Icons.MapPin size={11} className="shrink-0" /> {event.location}
                     </span>
                     {event.registerUrl ? (
                       <a
@@ -241,7 +241,7 @@ export default function Home() {
             <div className="grid md:grid-cols-5 gap-8 items-center">
               <div className="md:col-span-2 space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-sans-ui font-semibold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                  <Icons.Sparkles size={13} />
+                  <Icons.MessageCircle size={13} />
                   Interactive IEEE SSIT Forum
                 </div>
                 <h2 className="font-display text-2xl md:text-4xl font-bold leading-tight">
@@ -329,7 +329,10 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-slate-400 font-sans-ui pt-2">
-                  <span>{hasVoted ? "✓ Vote recorded" : "Click an option to cast your vote"}</span>
+                  <span className="flex items-center gap-1">
+                    {hasVoted && <Icons.Check size={12} className="text-emerald-400" />}
+                    {hasVoted ? "Vote recorded" : "Click an option to cast your vote"}
+                  </span>
                   <Link to="/about" className="text-amber-300 hover:underline">
                     Explore IEEE SSIT Ethics Standards →
                   </Link>

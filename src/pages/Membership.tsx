@@ -87,8 +87,8 @@ export default function Membership() {
                 className="p-6 rounded-2xl border space-y-3"
                 style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
               >
-                <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-sm">
-                  ✓
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <Icons.Check size={16} />
                 </div>
                 <h3 className="font-display font-bold text-base" style={{ color: solid("ink") }}>
                   {benefit.title}
@@ -162,8 +162,8 @@ export default function Membership() {
               rel="noreferrer"
               className="px-6 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold bg-amber-400 text-black hover:bg-amber-300 transition-colors shadow-lg active:scale-95 flex items-center gap-1.5"
             >
-              <Icons.Sparkles size={14} />
               Open IEEE Join Portal
+              <Icons.ExternalLink size={13} />
             </a>
             <Link
               to="/contact"

@@ -43,7 +43,7 @@ export default function Activities() {
           <div className="flex flex-wrap gap-1.5 p-1.5 rounded-2xl border" style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}>
             {[
               { id: "calendar", label: "2025 Global Calendar", icon: Icons.Calendar },
-              { id: "flagship", label: "Flagship Series", icon: Icons.Sparkles },
+              { id: "flagship", label: "Flagship Series", icon: Icons.Flag },
               { id: "chapterEvents", label: "Chapter Events", icon: Icons.Users },
               { id: "publications", label: "Publications & Standards", icon: Icons.BookOpen },
             ].map((tab) => {
@@ -85,8 +85,8 @@ export default function Activities() {
                   style={{ background: solid("bgWarm"), borderColor: tint("border", 0.8), color: solid("ink") }}
                 />
                 {calendarSearch && (
-                  <button onClick={() => setCalendarSearch("")} className="absolute right-2.5 top-2.5 text-xs text-slate-400">
-                    ✕
+                  <button onClick={() => setCalendarSearch("")} className="absolute right-2.5 top-2.5 text-slate-400">
+                    <Icons.X size={12} />
                   </button>
                 )}
               </div>
@@ -116,7 +116,9 @@ export default function Activities() {
                           {ev.name}
                         </td>
                         <td className="p-4 whitespace-nowrap" style={{ color: solid("muted") }}>
-                          📍 {ev.location}
+                          <span className="inline-flex items-center gap-1">
+                            <Icons.MapPin size={12} /> {ev.location}
+                          </span>
                         </td>
                         <td className="p-4 text-right whitespace-nowrap">
                           <a
@@ -158,8 +160,8 @@ export default function Activities() {
                         {c.acronym}
                       </span>
                       {c.note && (
-                        <span className="text-[10px] font-sans-ui uppercase tracking-wider font-bold text-amber-500">
-                          ★ Flagship
+                        <span className="inline-flex items-center gap-1 text-[10px] font-sans-ui uppercase tracking-wider font-bold text-amber-500">
+                          <Icons.Flag size={10} /> Flagship
                         </span>
                       )}
                     </div>
@@ -246,15 +248,15 @@ export default function Activities() {
                         {event.description}
                       </p>
                       {event.speaker && (
-                        <p className="font-sans-ui text-[11px] font-medium" style={{ color: solid("navy") }}>
-                          🎤 {event.speaker}
+                        <p className="font-sans-ui text-[11px] font-medium flex items-center gap-1" style={{ color: solid("navy") }}>
+                          <Icons.Mic size={11} /> {event.speaker}
                         </p>
                       )}
                     </div>
 
                     <div className="pt-3 border-t flex items-center justify-between text-xs" style={{ borderColor: tint("border", 0.5) }}>
-                      <span className="text-[11px]" style={{ color: solid("muted") }}>
-                        📍 {event.location}
+                      <span className="text-[11px] flex items-center gap-1" style={{ color: solid("muted") }}>
+                        <Icons.MapPin size={11} /> {event.location}
                       </span>
                       {event.registerUrl && (
                         <a

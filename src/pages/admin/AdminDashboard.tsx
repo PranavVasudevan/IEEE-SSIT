@@ -670,7 +670,7 @@ export default function AdminDashboard() {
                 { id: "gallery", label: "Photo Gallery", icon: Icons.Gallery, count: gallery.length },
                 { id: "team", label: "Student Team", icon: Icons.Users, count: team.length },
                 { id: "about_cms", label: "About & Focus Areas", icon: Icons.About },
-                { id: "membership_cms", label: "Membership & FAQs", icon: Icons.Sparkles },
+                { id: "membership_cms", label: "Membership & FAQs", icon: Icons.BookOpen },
               ].map((item) => {
                 const IconComp = item.icon
                 const isActive = activeTab === item.id
@@ -921,7 +921,7 @@ export default function AdminDashboard() {
                   { title: "Pending Inquiries", count: pendingInquiriesCount, sub: `${submissions.length} Total Submissions`, icon: Icons.Mail, color: "text-red-400", border: "hover:border-red-500/40", to: "inquiries" },
                   { title: "Active Ticker Alerts", count: activeAnnouncementsCount, sub: "Live in Top Banner", icon: Icons.Bell, color: "text-amber-400", border: "hover:border-amber-500/40", to: "announcements" },
                   { title: "Team Members", count: team.length, sub: "Chapter Executive & Web", icon: Icons.Users, color: "text-emerald-400", border: "hover:border-emerald-500/40", to: "team" },
-                  { title: "Member Applications", count: membershipApps.length, sub: `${pendingAppsCount} Requiring Action`, icon: Icons.Sparkles, color: "text-cyan-400", border: "hover:border-cyan-500/40", to: "applications" },
+                  { title: "Member Applications", count: membershipApps.length, sub: `${pendingAppsCount} Requiring Action`, icon: Icons.User, color: "text-cyan-400", border: "hover:border-cyan-500/40", to: "applications" },
                   { title: "Authorized Admins", count: allowlistEmails.length, sub: "Official SSN Roster", icon: Icons.Shield, color: "text-amber-400", border: "hover:border-amber-500/40", to: "admins" },
                   { title: "Audit Trail Logs", count: logs.length, sub: "Recent Recorded Actions", icon: Icons.Globe, color: "text-slate-400", border: "hover:border-slate-500/40", to: "activity_log" },
                 ].map((stat, i) => {
@@ -1105,8 +1105,8 @@ export default function AdminDashboard() {
                           <h4 className="font-display font-bold text-xs text-white truncate">
                             {event.title}
                           </h4>
-                          <p className="text-[10px] font-sans-ui text-slate-400 truncate">
-                            📍 {event.location} • {event.mode}
+                          <p className="text-[10px] font-sans-ui text-slate-400 truncate flex items-center gap-1">
+                            <Icons.MapPin size={10} className="shrink-0" /> {event.location} • {event.mode}
                           </p>
                         </div>
 
@@ -1381,15 +1381,15 @@ export default function AdminDashboard() {
                         <h3 className="font-display font-bold text-base text-white leading-snug">
                           {event.title}
                         </h3>
-                        <p className="text-xs text-amber-400 font-sans-ui font-semibold">
-                          🗓 {event.date} {event.time && `• ${event.time}`}
+                        <p className="text-xs text-amber-400 font-sans-ui font-semibold flex items-center gap-1">
+                          <Icons.Calendar size={12} /> {event.date} {event.time && `• ${event.time}`}
                         </p>
                         <p className="text-xs text-slate-400 font-sans-ui line-clamp-2">
                           {event.description}
                         </p>
                         {event.speaker && (
-                          <p className="text-[11px] font-mono text-slate-400">
-                            🎤 Speaker: {event.speaker}
+                          <p className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+                            <Icons.Mic size={11} /> Speaker: {event.speaker}
                           </p>
                         )}
                       </div>
@@ -1411,7 +1411,7 @@ export default function AdminDashboard() {
                             className="p-1.5 rounded-lg border border-slate-700 text-slate-400 hover:text-white cursor-pointer"
                             title="Duplicate Event"
                           >
-                            <Icons.Sparkles size={13} />
+                            <Icons.Copy size={13} />
                           </button>
                         </div>
 
@@ -1963,9 +1963,9 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="grid sm:grid-cols-3 gap-2 text-xs text-slate-400 font-sans-ui">
-                        <p>✉ <strong className="font-mono text-slate-200">{inq.email}</strong></p>
-                        <p>🎓 {inq.department || "General"}</p>
-                        <p>🕒 {inq.timestamp}</p>
+                        <p className="flex items-center gap-1.5"><Icons.Mail size={12} /> <strong className="font-mono text-slate-200">{inq.email}</strong></p>
+                        <p className="flex items-center gap-1.5"><Icons.GraduationCap size={12} /> {inq.department || "General"}</p>
+                        <p className="flex items-center gap-1.5"><Icons.Clock size={12} /> {inq.timestamp}</p>
                       </div>
 
                       <div className="p-3.5 rounded-xl bg-slate-950 text-xs text-slate-300 leading-relaxed font-sans-ui border border-slate-800/60">
