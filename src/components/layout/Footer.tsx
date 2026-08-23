@@ -96,16 +96,7 @@ export function Footer() {
             <p className="font-sans-ui text-xs font-mono" style={{ color: solid("ink") }}>
               {contact.email}
             </p>
-            <div className="pt-2">
-              <Link
-                to="/admin/login"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-sans-ui font-medium border border-black/10 dark:border-white/10 hover:border-amber-500/50 transition-colors"
-                style={{ color: solid("muted") }}
-              >
-                <Icons.Lock size={12} />
-                Web Dev Admin CMS
-              </Link>
-            </div>
+
           </div>
         </div>
 

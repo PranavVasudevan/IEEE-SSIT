@@ -77,6 +77,11 @@ export async function isEmailAllowlisted(email?: string | null): Promise<boolean
     return false
   }
 
+  // Fast check: If in the 6 approved developer admins, immediately return true
+  if (DEFAULT_ADMIN_EMAILS.includes(cleanEmail)) {
+    return true
+  }
+
   const list = await getAdminAllowlist()
   return list.includes(cleanEmail)
 }
@@ -919,6 +924,32 @@ export const INITIAL_TEAM: TeamMember[] = [
     active: true,
   },
   {
+    id: "team-6b",
+    name: "Harshini",
+    role: "Full-Stack Developer",
+    teamType: "Web Development",
+    department: "Computer Science & Engineering",
+    year: "3rd Year",
+    email: "harshini2410197@ssn.edu.in",
+    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=face",
+    bio: "Contributing to portal architecture, component systems, and database integrations.",
+    order: 7,
+    active: true,
+  },
+  {
+    id: "team-6c",
+    name: "Pranav",
+    role: "Web Development Engineer",
+    teamType: "Web Development",
+    department: "Computer Science & Engineering",
+    year: "3rd Year",
+    email: "pranav2410328@ssn.edu.in",
+    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face",
+    bio: "Building robust cloud workflows, interactive UI features, and performance optimizations.",
+    order: 8,
+    active: true,
+  },
+  {
     id: "team-7",
     name: "Aaditya Narayanan",
     role: "Chapter Chair",
@@ -1091,28 +1122,15 @@ export interface Announcement {
 
 export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
   {
-    id: "ann-1",
-    text: "✨ Registrations open for 'AI Ethics in Healthcare' Workshop (March 15, 2025) — Free IEEE certificates included!",
-    ctaText: "Register Now",
-    ctaUrl: "/activities",
-    priority: "high",
-    status: "active",
-    active: true,
-    createdAt: "2025-02-20",
-    startDate: "2025-02-20",
-    expiryDate: "2025-03-15",
-  },
-  {
     id: "ann-2",
     text: "🚀 SSIT Student Chapter Call for Core Committee & Web Dev Volunteers for Academic Year 2025–26.",
     ctaText: "Join Team",
     ctaUrl: "/membership",
     priority: "normal",
     status: "active",
-    active: true,
+    active: false,
     createdAt: "2025-02-18",
     startDate: "2025-02-18",
-    expiryDate: "2025-03-30",
   },
 ]
 

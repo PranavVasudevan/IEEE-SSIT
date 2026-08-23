@@ -174,7 +174,7 @@ export default function Contact() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Sharruk V"
+                    placeholder="Enter your full name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl font-sans-ui text-xs border outline-none focus:ring-2"

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { initFirebaseSDK, isFirebaseConfigured } from "./config"
 import { isEmailAllowlisted } from "./firestore"
-import { UserRole, normalizeEmail, isOfficialSSNEmail } from "./adminConfig"
+import { UserRole, normalizeEmail, isOfficialSSNEmail, DEFAULT_ADMIN_EMAILS } from "./adminConfig"
 
 export interface AdminUser {
   email: string
@@ -120,30 +120,45 @@ export function useAuth(): AuthState {
 
   useEffect(() => {
     let unsubscribe = () => {}
+    let isMounted = true
 
     const evaluateUserRole = async (currentUser: AdminUser | null) => {
+      if (!isMounted) return
       if (currentUser && currentUser.email) {
         const email = normalizeEmail(currentUser.email)
         setUser(currentUser)
         try {
-          const isAllowed = await isEmailAllowlisted(email)
-          if (isAllowed) {
+          // Fast check: If in core hardcoded admins, immediately authorize
+          if (DEFAULT_ADMIN_EMAILS.includes(email)) {
             setRole("admin")
             setIsAuthorizedAdmin(true)
             setError(null)
           } else {
-            setRole("user")
-            setIsAuthorizedAdmin(false)
-            if (!isOfficialSSNEmail(email)) {
-              setError(`Access Restricted: ${email} is not an official @ssn.edu.in email address.`)
+            const isAllowed = await isEmailAllowlisted(email)
+            if (isAllowed) {
+              setRole("admin")
+              setIsAuthorizedAdmin(true)
+              setError(null)
             } else {
-              setError(`Access Restricted: ${email} is an SSN account, but not listed in the authorized Web Dev Admin roster.`)
+              setRole("user")
+              setIsAuthorizedAdmin(false)
+              if (!isOfficialSSNEmail(email)) {
+                setError(`Access Restricted: ${email} is not an official @ssn.edu.in email address.`)
+              } else {
+                setError(`Access Restricted: ${email} is an SSN account, but not listed in the authorized Web Dev Admin roster.`)
+              }
             }
           }
         } catch (e: any) {
           console.error("Allowlist verification error:", e)
-          setRole("user")
-          setIsAuthorizedAdmin(false)
+          // Fallback to local admin check
+          if (DEFAULT_ADMIN_EMAILS.includes(email)) {
+            setRole("admin")
+            setIsAuthorizedAdmin(true)
+          } else {
+            setRole("user")
+            setIsAuthorizedAdmin(false)
+          }
         }
       } else {
         setUser(null)
@@ -151,28 +166,39 @@ export function useAuth(): AuthState {
         setIsAuthorizedAdmin(false)
         setError(null)
       }
-      setLoading(false)
+      if (isMounted) setLoading(false)
     }
 
     const initAuth = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.auth) {
-          const { onAuthStateChanged } = await import("firebase/auth")
-          unsubscribe = onAuthStateChanged(sdk.auth, async (fbUser) => {
-            if (fbUser) {
-              await evaluateUserRole({
-                email: fbUser.email || "",
-                displayName: fbUser.displayName || undefined,
-                photoURL: fbUser.photoURL || undefined,
-                uid: fbUser.uid,
-              })
-            } else {
-              await evaluateUserRole(null)
-            }
-          })
-          return
+      try {
+        if (isFirebaseConfigured) {
+          const sdk = await initFirebaseSDK()
+          if (sdk && sdk.auth) {
+            const { onAuthStateChanged } = await import("firebase/auth")
+            unsubscribe = onAuthStateChanged(
+              sdk.auth,
+              async (fbUser) => {
+                if (fbUser) {
+                  await evaluateUserRole({
+                    email: fbUser.email || "",
+                    displayName: fbUser.displayName || undefined,
+                    photoURL: fbUser.photoURL || undefined,
+                    uid: fbUser.uid,
+                  })
+                } else {
+                  await evaluateUserRole(null)
+                }
+              },
+              (authError) => {
+                console.error("Firebase auth state listener error:", authError)
+                evaluateUserRole(null)
+              }
+            )
+            return
+          }
         }
+      } catch (err) {
+        console.error("Failed to initialize Firebase Auth:", err)
       }
 
       // Local storage mock / dev auth load
@@ -202,7 +228,16 @@ export function useAuth(): AuthState {
 
     initAuth()
 
-    return () => unsubscribe()
+    // Safety timeout: ensure loading is resolved within 2.5s in all environments
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) setLoading(false)
+    }, 2500)
+
+    return () => {
+      isMounted = false
+      clearTimeout(safetyTimer)
+      unsubscribe()
+    }
   }, [])
 
   return {

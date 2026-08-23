@@ -54,6 +54,8 @@ The following SSN student accounts are configured with **Admin / Developer** per
 4. **`varun2410158@ssn.edu.in`** (Varun)
 5. **`harshika2410326@ssn.edu.in`** (Harshika)
 6. **`vedika2410432@ssn.edu.in`** (Vedika)
+7. **`harshini2410197@ssn.edu.in`** (Harshini)
+8. **`pranav2410328@ssn.edu.in`** (Pranav)
 
 ---
 
@@ -136,7 +138,9 @@ service cloud.firestore {
         'shriram2410046@ssn.edu.in',
         'varun2410158@ssn.edu.in',
         'harshika2410326@ssn.edu.in',
-        'vedika2410432@ssn.edu.in'
+        'vedika2410432@ssn.edu.in',
+        'harshini2410197@ssn.edu.in',
+        'pranav2410328@ssn.edu.in'
       ];
     }
 

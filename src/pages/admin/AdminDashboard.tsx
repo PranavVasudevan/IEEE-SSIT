@@ -199,6 +199,7 @@ export default function AdminDashboard() {
   const pendingAppsCount = membershipApps.filter(s => s.status === "new" || s.status === "under_review").length
   const activeAnnouncementsCount = announcements.filter(a => a.active).length
   const upcomingEventsCount = events.filter(e => e.status === "upcoming").length
+  const upcomingEvents = useMemo(() => events.filter(e => e.status === "upcoming"), [events])
 
   // ==========================================
   // FILTERED DATA SELECTORS
