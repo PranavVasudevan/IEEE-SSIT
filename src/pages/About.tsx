@@ -23,8 +23,15 @@ export default function About() {
   const { team, loading: teamLoading } = useTeam()
   const { chapterInfo } = useChapterInfo()
 
-  const webDevMembers = team.filter(m => m.teamType === "Web Development" && (m.active !== false))
-  const execMembers = team.filter(m => m.teamType !== "Web Development" && (m.active !== false))
+  const officeBearers = team
+    .filter(m => (m.teamType === "Office Bearers" || m.teamType === "Executive") && (m.active !== false))
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+  const webDevMembers = team
+    .filter(m => m.teamType === "Web Development" && (m.active !== false))
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+  const otherMembers = team
+    .filter(m => m.teamType !== "Office Bearers" && m.teamType !== "Executive" && m.teamType !== "Web Development" && (m.active !== false))
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
 
   return (
     <div className="pt-28 pb-20 px-4 md:px-8 space-y-12">
@@ -246,86 +253,115 @@ export default function About() {
 
         {/* Tab 4: SSN Student Chapter Team & Web Dev Team */}
         {activeTab === "team" && (
-          <div className="space-y-10">
-            {/* Executive Committee */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+          <div className="space-y-12">
+            {/* 1. Office Bearers */}
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h2 className="font-display text-2xl font-bold" style={{ color: solid("ink") }}>
-                    Student Chapter Executive Committee
-                  </h2>
-                  <p className="font-sans-ui text-xs" style={{ color: solid("muted") }}>
-                    SSN College of Engineering Student Branch Chapter Office Bearers
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="font-display text-2xl md:text-3xl font-bold" style={{ color: solid("ink") }}>
+                      Student Chapter Office Bearers
+                    </h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-sans-ui font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40">
+                      {officeBearers.length} Office Bearers
+                    </span>
+                  </div>
+                  <p className="font-sans-ui text-xs md:text-sm pt-1" style={{ color: solid("muted") }}>
+                    SSN College of Engineering Student Branch Chapter Leadership — 2026
                   </p>
                 </div>
               </div>
 
               {teamLoading ? (
                 <PersonCardSkeletonGrid count={3} />
-              ) : execMembers.length === 0 ? (
-                <EmptyState icon={Icons.Users} title="Executive committee roster coming soon" />
+              ) : officeBearers.length === 0 ? (
+                <EmptyState icon={Icons.Users} title="Office Bearers roster coming soon" />
               ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {execMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="p-6 rounded-2xl border flex items-start gap-4 shadow-sm group hover:border-amber-500/40 transition-colors"
-                    style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
-                  >
-                    {member.photo ? (
-                      <img
-                        src={member.photo}
-                        alt={member.name}
-                        className="w-14 h-14 rounded-2xl object-cover shrink-0 border"
-                        style={{ borderColor: tint("border", 0.8) }}
-                      />
-                    ) : (
-                      <div
-                        className="w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-base tracking-wider border shadow-sm transition-transform group-hover:scale-105"
-                        style={{
-                          background: "linear-gradient(135deg, rgba(30, 58, 138, 0.2), rgba(245, 158, 11, 0.15))",
-                          borderColor: "rgba(245, 158, 11, 0.35)",
-                          color: "rgb(217, 119, 6)",
-                        }}
-                      >
-                        {getMemberInitials(member.name)}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {officeBearers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm group hover:border-amber-500/50 hover:shadow-md transition-all"
+                      style={{ background: solid("bgWarm"), borderColor: tint("border", 0.7) }}
+                    >
+                      <div className="space-y-3.5">
+                        <div className="flex items-start gap-4">
+                          {member.photo && member.photo.trim() !== "" ? (
+                            <img
+                              src={member.photo}
+                              alt={member.name}
+                              className="w-16 h-16 rounded-2xl object-cover shrink-0 border border-amber-500/30 shadow-sm"
+                            />
+                          ) : (
+                            <div
+                              className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-lg tracking-wider border shadow-sm transition-transform group-hover:scale-105"
+                              style={{
+                                background: "linear-gradient(135deg, rgba(30, 58, 138, 0.25), rgba(245, 158, 11, 0.2))",
+                                borderColor: "rgba(245, 158, 11, 0.45)",
+                                color: "rgb(217, 119, 6)",
+                              }}
+                            >
+                              {getMemberInitials(member.name)}
+                            </div>
+                          )}
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                {member.teamType}
+                              </span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
+                                {member.role}
+                              </span>
+                            </div>
+                            <h3 className="font-display font-bold text-lg truncate" style={{ color: solid("ink") }}>
+                              {member.name}
+                            </h3>
+                            <p className="font-sans-ui text-xs font-medium" style={{ color: solid("muted") }}>
+                              {member.year}
+                            </p>
+                          </div>
+                        </div>
+
+                        {(member.quote || member.bio) && (
+                          <blockquote className="font-display italic text-xs leading-relaxed p-3 rounded-xl border border-amber-500/15 bg-amber-500/5 text-slate-700 dark:text-slate-200">
+                            “{member.quote || member.bio}”
+                          </blockquote>
+                        )}
                       </div>
-                    )}
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-blue-500/15 text-blue-700 dark:text-blue-300">
-                        {member.role}
-                      </span>
-                      <h3 className="font-display font-bold text-base truncate" style={{ color: solid("ink") }}>
-                        {member.name}
-                      </h3>
-                      <p className="font-sans-ui text-xs" style={{ color: solid("muted") }}>
-                        {member.department} • {member.year}
-                      </p>
-                      {member.bio && (
-                        <p className="font-sans-ui text-[11px] leading-tight pt-1 line-clamp-2" style={{ color: solid("muted") }}>
-                          {member.bio}
-                        </p>
+
+                      {member.email && (
+                        <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: tint("border", 0.5) }}>
+                          <span className="font-sans-ui text-[11px] font-mono truncate" style={{ color: solid("navy") }}>
+                            {member.email}
+                          </span>
+                          <a
+                            href={`mailto:${member.email}`}
+                            className="p-1 text-slate-400 hover:text-amber-500 transition-colors"
+                            title={`Email ${member.name}`}
+                          >
+                            <Icons.Mail size={13} />
+                          </a>
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Web Development Team (Core Developers) */}
-            <div className="space-y-4 pt-6 border-t" style={{ borderColor: tint("border", 0.6) }}>
+            {/* 2. Web Development Team */}
+            <div className="space-y-6 pt-6 border-t" style={{ borderColor: tint("border", 0.6) }}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-display text-2xl font-bold" style={{ color: solid("ink") }}>
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="font-display text-2xl md:text-3xl font-bold" style={{ color: solid("ink") }}>
                       Web Development & Engineering Team
                     </h2>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-sans-ui font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-sans-ui font-bold bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/40">
                       {webDevMembers.length} Core Members
                     </span>
                   </div>
-                  <p className="font-sans-ui text-xs" style={{ color: solid("muted") }}>
+                  <p className="font-sans-ui text-xs md:text-sm pt-1" style={{ color: solid("muted") }}>
                     Building, maintaining, and architecting the IEEE SSIT SSN Chapter Portal and Content Management System.
                   </p>
                 </div>
@@ -336,51 +372,123 @@ export default function About() {
               ) : webDevMembers.length === 0 ? (
                 <EmptyState icon={Icons.Users} title="Web dev team roster coming soon" />
               ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {webDevMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="p-6 rounded-2xl border flex items-start gap-4 shadow-sm group hover:border-amber-500/40 transition-colors"
-                    style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
-                  >
-                    {member.photo ? (
-                      <img
-                        src={member.photo}
-                        alt={member.name}
-                        className="w-14 h-14 rounded-2xl object-cover shrink-0 border"
-                        style={{ borderColor: tint("border", 0.8) }}
-                      />
-                    ) : (
-                      <div
-                        className="w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-base tracking-wider border shadow-sm transition-transform group-hover:scale-105"
-                        style={{
-                          background: "linear-gradient(135deg, rgba(30, 58, 138, 0.2), rgba(245, 158, 11, 0.15))",
-                          borderColor: "rgba(245, 158, 11, 0.35)",
-                          color: "rgb(217, 119, 6)",
-                        }}
-                      >
-                        {getMemberInitials(member.name)}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {webDevMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm group hover:border-sky-500/50 hover:shadow-md transition-all"
+                      style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
+                    >
+                      <div className="space-y-3.5">
+                        <div className="flex items-start gap-4">
+                          {member.photo && member.photo.trim() !== "" ? (
+                            <img
+                              src={member.photo}
+                              alt={member.name}
+                              className="w-16 h-16 rounded-2xl object-cover shrink-0 border border-slate-700 shadow-sm"
+                            />
+                          ) : (
+                            <div
+                              className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-lg tracking-wider border shadow-sm transition-transform group-hover:scale-105"
+                              style={{
+                                background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15))",
+                                borderColor: "rgba(14, 165, 233, 0.35)",
+                                color: "rgb(14, 165, 233)",
+                              }}
+                            >
+                              {getMemberInitials(member.name)}
+                            </div>
+                          )}
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
+                                {member.teamType}
+                              </span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25">
+                                {member.role}
+                              </span>
+                            </div>
+                            <h3 className="font-display font-bold text-lg truncate" style={{ color: solid("ink") }}>
+                              {member.name}
+                            </h3>
+                            <p className="font-sans-ui text-xs font-medium" style={{ color: solid("muted") }}>
+                              {member.year}
+                            </p>
+                          </div>
+                        </div>
+
+                        {(member.quote || member.bio) && (
+                          <blockquote className="font-display italic text-xs leading-relaxed p-3 rounded-xl border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 text-slate-700 dark:text-slate-300">
+                            “{member.quote || member.bio}”
+                          </blockquote>
+                        )}
                       </div>
-                    )}
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300">
-                        {member.role}
-                      </span>
-                      <h3 className="font-display font-bold text-base truncate" style={{ color: solid("ink") }}>
-                        {member.name}
-                      </h3>
-                      <p className="font-sans-ui text-xs" style={{ color: solid("muted") }}>
-                        {member.department} • {member.year}
-                      </p>
-                      <p className="font-sans-ui text-[11px] font-mono truncate" style={{ color: solid("navy") }}>
-                        {member.email}
-                      </p>
+
+                      {member.email && (
+                        <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: tint("border", 0.5) }}>
+                          <span className="font-sans-ui text-[11px] font-mono truncate" style={{ color: solid("navy") }}>
+                            {member.email}
+                          </span>
+                          <a
+                            href={`mailto:${member.email}`}
+                            className="p-1 text-slate-400 hover:text-sky-500 transition-colors"
+                            title={`Email ${member.name}`}
+                          >
+                            <Icons.Mail size={13} />
+                          </a>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
               )}
             </div>
+
+            {/* 3. Other Members (if any added via CMS in future) */}
+            {otherMembers.length > 0 && (
+              <div className="space-y-6 pt-6 border-t" style={{ borderColor: tint("border", 0.6) }}>
+                <h2 className="font-display text-2xl font-bold" style={{ color: solid("ink") }}>
+                  Additional Chapter Coordinators
+                </h2>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {otherMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm"
+                      style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
+                    >
+                      <div className="space-y-3.5">
+                        <div className="flex items-start gap-4">
+                          {member.photo && member.photo.trim() !== "" ? (
+                            <img src={member.photo} alt={member.name} className="w-16 h-16 rounded-2xl object-cover shrink-0 border" />
+                          ) : (
+                            <div className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-lg border">
+                              {getMemberInitials(member.name)}
+                            </div>
+                          )}
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-slate-500/15">
+                              {member.role}
+                            </span>
+                            <h3 className="font-display font-bold text-lg truncate" style={{ color: solid("ink") }}>
+                              {member.name}
+                            </h3>
+                            <p className="font-sans-ui text-xs" style={{ color: solid("muted") }}>
+                              {member.year}
+                            </p>
+                          </div>
+                        </div>
+                        {(member.quote || member.bio) && (
+                          <blockquote className="font-display italic text-xs leading-relaxed p-3 rounded-xl border border-black/5 dark:border-white/5">
+                            “{member.quote || member.bio}”
+                          </blockquote>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

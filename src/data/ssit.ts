@@ -185,7 +185,7 @@ export const contact = {
   web: "www.technologyandsociety.org",
   joinWeb: "www.ieeessit.org",
   ieeeJoin: "www.ieee.org/join",
-  email: "SSITfeedback@ieee.org",
+  email: "ieeessitsb@ssn.edu.in",
   location: "SSN College of Engineering, Chennai — 603 110",
 }
 

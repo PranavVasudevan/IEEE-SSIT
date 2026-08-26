@@ -168,9 +168,11 @@ export default function AdminDashboard() {
   const [teamForm, setTeamForm] = useState<Partial<TeamMember>>({
     name: "",
     role: "",
-    teamType: "Web Development",
-    department: "Computer Science & Engineering",
-    year: "3rd Year",
+    teamType: "Office Bearers",
+    department: "",
+    year: "BME III Year",
+    chapter: "SSIT_2026",
+    quote: "",
     email: "",
     bio: "",
     photo: "",
@@ -443,15 +445,21 @@ export default function AdminDashboard() {
   const handleSaveTeam = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!teamForm.name || !teamForm.role) {
-      showToast("Name and Role are required.", "warning")
+      showToast("Name and Position are required.", "warning")
       return
     }
     try {
-      await saveTeamMember(teamForm as TeamMember)
+      const memberToSave = {
+        ...teamForm,
+        quote: teamForm.quote || teamForm.bio || "",
+        bio: teamForm.bio || teamForm.quote || "",
+        chapter: teamForm.chapter || "SSIT_2026",
+      }
+      await saveTeamMember(memberToSave as TeamMember)
       showToast(editingTeamMember ? "Team member updated!" : "New team member added to directory!", "success")
       setTeamModalOpen(false)
       setEditingTeamMember(null)
-      setTeamForm({ name: "", role: "", teamType: "Web Development", department: "Computer Science & Engineering", year: "3rd Year", email: "", bio: "", photo: "", linkedin: "", github: "", active: true, order: 1 })
+      setTeamForm({ name: "", role: "", teamType: "Office Bearers", department: "", year: "", chapter: "SSIT_2026", quote: "", email: "", bio: "", photo: "", linkedin: "", github: "", active: true, order: 1 })
     } catch (err: any) {
       showToast("Failed to save team member.", "error")
     }
@@ -1587,9 +1595,11 @@ export default function AdminDashboard() {
                     setTeamForm({
                       name: "",
                       role: "",
-                      teamType: "Web Development",
-                      department: "Computer Science & Engineering",
-                      year: "3rd Year",
+                      teamType: "Office Bearers",
+                      department: "",
+                      year: "BME III Year",
+                      chapter: "SSIT_2026",
+                      quote: "",
                       email: "",
                       bio: "",
                       photo: "",
@@ -1618,7 +1628,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
-                  {["all", "Web Development", "Executive", "Events", "Design & Media", "Editorial"].map((type) => (
+                  {["all", "Office Bearers", "Web Development", "Executive", "Events", "Design & Media", "Editorial"].map((type) => (
                     <button
                       key={type}
                       onClick={() => setTeamTypeFilter(type)}
@@ -1659,9 +1669,11 @@ export default function AdminDashboard() {
                           <div
                             className="w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-base tracking-wider border shadow-sm"
                             style={{
-                              background: "linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(245, 158, 11, 0.2))",
-                              borderColor: "rgba(245, 158, 11, 0.4)",
-                              color: "rgb(251, 191, 36)",
+                              background: member.teamType === "Office Bearers"
+                                ? "linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(245, 158, 11, 0.3))"
+                                : "linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(99, 102, 241, 0.3))",
+                              borderColor: member.teamType === "Office Bearers" ? "rgba(245, 158, 11, 0.4)" : "rgba(14, 165, 233, 0.4)",
+                              color: member.teamType === "Office Bearers" ? "rgb(251, 191, 36)" : "rgb(56, 189, 248)",
                             }}
                           >
                             {getMemberInitials(member.name)}
@@ -1669,8 +1681,12 @@ export default function AdminDashboard() {
                         )}
 
                         <div className="space-y-1 min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider border ${
+                              member.teamType === "Office Bearers"
+                                ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                                : "bg-sky-500/20 text-sky-300 border-sky-500/30"
+                            }`}>
                               {member.teamType}
                             </span>
                             {member.order !== undefined && (
@@ -1682,17 +1698,19 @@ export default function AdminDashboard() {
                           </h4>
                           <p className="text-xs text-amber-300 font-sans-ui truncate">{member.role}</p>
                           <p className="text-[11px] text-slate-400 font-sans-ui truncate">
-                            {member.department} • {member.year}
+                            {member.year}
                           </p>
-                          {member.email && (
-                            <p className="text-[10px] font-mono text-slate-500 truncate">{member.email}</p>
+                          {member.email ? (
+                            <p className="text-[10px] font-mono text-slate-400 truncate">{member.email}</p>
+                          ) : (
+                            <p className="text-[10px] font-mono text-slate-600 italic">No email set</p>
                           )}
                         </div>
                       </div>
 
-                      {member.bio && (
-                        <p className="text-[11px] text-slate-400 line-clamp-2 italic font-sans-ui">
-                          "{member.bio}"
+                      {(member.quote || member.bio) && (
+                        <p className="text-[11px] text-slate-300 line-clamp-2 italic font-sans-ui p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                          “{member.quote || member.bio}”
                         </p>
                       )}
 
@@ -1701,14 +1719,14 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleMoveTeamMember(member, "up")}
-                            className="p-1 rounded-lg border border-slate-800 text-slate-400 hover:text-amber-400 hover:border-amber-500/30 text-xs"
+                            className="p-1 rounded-lg border border-slate-800 text-slate-400 hover:text-amber-400 hover:border-amber-500/30 text-xs cursor-pointer"
                             title="Move Up"
                           >
                             ▲
                           </button>
                           <button
                             onClick={() => handleMoveTeamMember(member, "down")}
-                            className="p-1 rounded-lg border border-slate-800 text-slate-400 hover:text-amber-400 hover:border-amber-500/30 text-xs"
+                            className="p-1 rounded-lg border border-slate-800 text-slate-400 hover:text-amber-400 hover:border-amber-500/30 text-xs cursor-pointer"
                             title="Move Down"
                           >
                             ▼
@@ -2750,11 +2768,11 @@ export default function AdminDashboard() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-amber-400">Role / Designation *</label>
+                  <label className="block text-xs font-semibold text-amber-400">Position / Designation *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Web Development Member"
+                    placeholder="e.g. Chair or Head"
                     value={teamForm.role || ""}
                     onChange={(e) => setTeamForm({ ...teamForm, role: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
@@ -2768,6 +2786,7 @@ export default function AdminDashboard() {
                     onChange={(e) => setTeamForm({ ...teamForm, teamType: e.target.value as any })}
                     className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
                   >
+                    <option value="Office Bearers">Office Bearers</option>
                     <option value="Web Development">Web Development</option>
                     <option value="Executive">Executive</option>
                     <option value="Events">Events</option>
@@ -2780,23 +2799,24 @@ export default function AdminDashboard() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-amber-400">Department</label>
+                  <label className="block text-xs font-semibold text-amber-400">Academic Year *</label>
                   <input
                     type="text"
-                    placeholder="e.g. Computer Science & Engineering"
-                    value={teamForm.department || ""}
-                    onChange={(e) => setTeamForm({ ...teamForm, department: e.target.value })}
+                    required
+                    placeholder="e.g. BME III Year or M.Tech CSE III Year"
+                    value={teamForm.year || ""}
+                    onChange={(e) => setTeamForm({ ...teamForm, year: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-amber-400">Year</label>
+                  <label className="block text-xs font-semibold text-amber-400">Chapter Roster</label>
                   <input
                     type="text"
-                    placeholder="e.g. 3rd Year"
-                    value={teamForm.year || ""}
-                    onChange={(e) => setTeamForm({ ...teamForm, year: e.target.value })}
+                    placeholder="e.g. SSIT_2026"
+                    value={teamForm.chapter || "SSIT_2026"}
+                    onChange={(e) => setTeamForm({ ...teamForm, chapter: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
                   />
                 </div>
@@ -2804,10 +2824,10 @@ export default function AdminDashboard() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-amber-400">SSN Email</label>
+                  <label className="block text-xs font-semibold text-amber-400">Official SSN Email (if known)</label>
                   <input
                     type="email"
-                    placeholder="e.g. student24xxxxx@ssn.edu.in"
+                    placeholder="e.g. varun2410158@ssn.edu.in"
                     value={teamForm.email || ""}
                     onChange={(e) => setTeamForm({ ...teamForm, email: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
@@ -2854,12 +2874,12 @@ export default function AdminDashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-amber-400">Bio / Highlights</label>
+                <label className="block text-xs font-semibold text-amber-400">Quote / Bio *</label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Specializes in frontend architectures and cloud operations."
-                  value={teamForm.bio || ""}
-                  onChange={(e) => setTeamForm({ ...teamForm, bio: e.target.value })}
+                  placeholder='e.g. "Some inherit a league. Some dare to build one. I choose to be."'
+                  value={teamForm.quote || teamForm.bio || ""}
+                  onChange={(e) => setTeamForm({ ...teamForm, quote: e.target.value, bio: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none focus:border-amber-500/50"
                 />
               </div>
