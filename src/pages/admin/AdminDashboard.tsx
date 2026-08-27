@@ -36,6 +36,7 @@ import {
   useNewsletterSubscribers,
   deleteNewsletterSubscriber,
 } from "@/firebase/firestore"
+import { storageApi } from "@/api/storage"
 import { isOfficialSSNEmail } from "@/firebase/adminConfig"
 import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
@@ -165,6 +166,9 @@ export default function AdminDashboard() {
 
   const [teamModalOpen, setTeamModalOpen] = useState(false)
   const [editingTeamMember, setEditingTeamMember] = useState<TeamMember | null>(null)
+  const [uploadingTeamPhoto, setUploadingTeamPhoto] = useState(false)
+  const [uploadingGalleryPhoto, setUploadingGalleryPhoto] = useState(false)
+  const [uploadingEventImage, setUploadingEventImage] = useState(false)
   const [teamForm, setTeamForm] = useState<Partial<TeamMember>>({
     name: "",
     role: "",
@@ -402,21 +406,61 @@ export default function AdminDashboard() {
     return (name || "TM").slice(0, 2).toUpperCase()
   }
 
-  const handleTeamImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTeamImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) {
-      showToast("File Size Limit", "warning", "Please select an image under 2MB.")
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("File Size Limit", "warning", "Please select an image under 10MB.")
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setTeamForm(prev => ({ ...prev, photo: reader.result as string }))
-        showToast("Profile image loaded locally.", "success")
-      }
+    setUploadingTeamPhoto(true)
+    try {
+      const res = await storageApi.uploadFile(file, "team")
+      setTeamForm((prev) => ({ ...prev, photo: res.url }))
+      showToast("Photo uploaded to Supabase Storage!", "success")
+    } catch (err: any) {
+      showToast("Failed to upload photo", "error", err.message)
+    } finally {
+      setUploadingTeamPhoto(false)
     }
-    reader.readAsDataURL(file)
+  }
+
+  const handleGalleryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("File Size Limit", "warning", "Please select an image under 10MB.")
+      return
+    }
+    setUploadingGalleryPhoto(true)
+    try {
+      const res = await storageApi.uploadFile(file, "gallery")
+      setGalleryForm((prev) => ({ ...prev, url: res.url }))
+      showToast("Photo uploaded to Supabase Storage!", "success")
+    } catch (err: any) {
+      showToast("Failed to upload photo", "error", err.message)
+    } finally {
+      setUploadingGalleryPhoto(false)
+    }
+  }
+
+  const handleEventImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("File Size Limit", "warning", "Please select an image under 10MB.")
+      return
+    }
+    setUploadingEventImage(true)
+    try {
+      const res = await storageApi.uploadFile(file, "events")
+      setEventForm((prev) => ({ ...prev, image: res.url }))
+      showToast("Cover image uploaded to Supabase Storage!", "success")
+    } catch (err: any) {
+      showToast("Failed to upload cover image", "error", err.message)
+    } finally {
+      setUploadingEventImage(false)
+    }
   }
 
   const handleMoveTeamMember = async (member: TeamMember, direction: "up" | "down") => {
@@ -494,7 +538,7 @@ export default function AdminDashboard() {
       setNewAdminEmail("")
       setAddAdminModalOpen(false)
     } catch (err: any) {
-      showToast("Failed to add administrator.", "error")
+      showToast("Failed to add administrator.", "error", err?.message)
     }
   }
 
@@ -509,8 +553,12 @@ export default function AdminDashboard() {
       message: `Revoke administrator access for ${email}? They will no longer be able to log in to /admin/dashboard.`,
       isDanger: true,
       onConfirm: async () => {
-        await removeAdmin(email, user?.email || "Lead Admin")
-        showToast("Administrator access revoked.", "info")
+        try {
+          await removeAdmin(email, user?.email || "Lead Admin")
+          showToast("Administrator access revoked.", "info")
+        } catch (err: any) {
+          showToast("Failed to revoke admin", "error", err?.message)
+        }
         setConfirmModal(prev => ({ ...prev, isOpen: false }))
       },
     })
@@ -525,7 +573,7 @@ export default function AdminDashboard() {
         setSelectedInquiry(prev => prev ? { ...prev, status: newStatus } : null)
       }
     } catch (err: any) {
-      showToast("Failed to update status.", "error")
+      showToast("Failed to update status.", "error", err?.message)
     }
   }
 
@@ -536,8 +584,12 @@ export default function AdminDashboard() {
       message: `Permanently delete message from ${inq.name}?`,
       isDanger: true,
       onConfirm: async () => {
-        await deleteSubmission(inq.id)
-        showToast("Inquiry deleted.", "info")
+        try {
+          await deleteSubmission(inq.id)
+          showToast("Inquiry deleted.", "info")
+        } catch (err: any) {
+          showToast("Failed to delete inquiry", "error", err?.message)
+        }
         setSelectedInquiry(null)
         setConfirmModal(prev => ({ ...prev, isOpen: false }))
       },
@@ -552,7 +604,7 @@ export default function AdminDashboard() {
       showToast("Chapter information & focus areas updated live!", "success")
       setChapterFormDirty(false)
     } catch (err: any) {
-      showToast("Failed to save chapter information.", "error")
+      showToast("Failed to save chapter information.", "error", err?.message)
     }
   }
 
@@ -562,7 +614,7 @@ export default function AdminDashboard() {
       await updateMembershipContent(membershipForm)
       showToast("Membership roadmap & benefits updated live!", "success")
     } catch (err: any) {
-      showToast("Failed to save membership content.", "error")
+      showToast("Failed to save membership content.", "error", err?.message)
     }
   }
 
@@ -2299,24 +2351,32 @@ export default function AdminDashboard() {
 
               <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4">
                 <h3 className="font-display font-bold text-base text-white">
-                  Backend & Database Health
+                  Backend Architecture & Storage Status
                 </h3>
-                <div className="grid sm:grid-cols-2 gap-4 text-xs">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                   <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                    <span className="text-slate-400">Firebase Auth Provider</span>
-                    <p className="font-bold text-white font-mono">Google OAuth (@ssn.edu.in)</p>
+                    <span className="text-slate-400">Authentication</span>
+                    <p className="font-bold text-white font-mono">Firebase Google OAuth</p>
                   </div>
                   <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                    <span className="text-slate-400">Database Engine</span>
-                    <p className="font-bold text-emerald-400 font-mono">Cloud Firestore (Active)</p>
+                    <span className="text-slate-400">REST API Layer</span>
+                    <p className="font-bold text-emerald-400 font-mono">FastAPI (Connected)</p>
                   </div>
                   <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                    <span className="text-slate-400">Security Rule Mode</span>
-                    <p className="font-bold text-amber-400 font-mono">Strict 11-Member Allowlist Lock</p>
+                    <span className="text-slate-400">Application Database</span>
+                    <p className="font-bold text-emerald-400 font-mono">PostgreSQL (SQLAlchemy)</p>
                   </div>
                   <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                    <span className="text-slate-400">Audit Logging</span>
-                    <p className="font-bold text-white font-mono">activity_logs (Immutable)</p>
+                    <span className="text-slate-400">Asset Storage</span>
+                    <p className="font-bold text-amber-400 font-mono">Supabase Storage (ieee-ssit-assets)</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <span className="text-slate-400">Admin Authorization</span>
+                    <p className="font-bold text-amber-400 font-mono">Server-side @ssn.edu.in Token Validation</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <span className="text-slate-400">Audit Trail</span>
+                    <p className="font-bold text-white font-mono">PostgreSQL activity_logs</p>
                   </div>
                 </div>
               </div>
@@ -2472,15 +2532,27 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-amber-400">Cover Image URL</label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={eventForm.image || ""}
-                  onChange={(e) => setEventForm({ ...eventForm, image: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
-                />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-amber-400">Cover Image</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="url"
+                    placeholder="Image URL or upload below..."
+                    value={eventForm.image || ""}
+                    onChange={(e) => setEventForm({ ...eventForm, image: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
+                  />
+                  <label className="relative flex items-center justify-center px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 cursor-pointer text-center">
+                    {uploadingEventImage ? "Uploading to Storage..." : "📁 Upload to Supabase Storage"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEventImageUpload}
+                      disabled={uploadingEventImage}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -2544,16 +2616,28 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-amber-400">Image URL *</label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://images.unsplash.com/..."
-                  value={galleryForm.url || ""}
-                  onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
-                />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-amber-400">Photo Source *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="url"
+                    required
+                    placeholder="Image URL or upload below..."
+                    value={galleryForm.url || ""}
+                    onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white outline-none"
+                  />
+                  <label className="relative flex items-center justify-center px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 cursor-pointer text-center">
+                    {uploadingGalleryPhoto ? "Uploading to Storage..." : "📁 Upload to Supabase Storage"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleGalleryImageUpload}
+                      disabled={uploadingGalleryPhoto}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -2863,11 +2947,14 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-[10px] text-slate-400">Option 2: Upload Image Locally (Dev Mode)</span>
+                  <span className="text-[10px] text-slate-400">
+                    {uploadingTeamPhoto ? "Uploading photo to Supabase Storage..." : "Option 2: Upload Photo to Supabase Storage"}
+                  </span>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleTeamImageUpload}
+                    disabled={uploadingTeamPhoto}
                     className="w-full px-3 py-1.5 rounded-xl text-xs bg-slate-950 border border-slate-800 text-slate-300 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-400 file:text-black hover:file:bg-amber-300 cursor-pointer"
                   />
                 </div>

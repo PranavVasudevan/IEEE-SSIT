@@ -1,0 +1,55 @@
+# ==============================================================================
+# Docker Compose for IEEE SSIT SSN Student Branch Portal & CMS
+# ==============================================================================
+# Run with: docker compose up --build
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # FastAPI Backend Service
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ieee_ssit_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ieee_ssit_net
+
+  # ----------------------------------------------------------------------------
+  # React Frontend (Nginx SPA Server & Reverse Proxy)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Browser clients reach FastAPI on localhost:8000 via host network mapping
+        - VITE_API_BASE_URL=http://localhost:8000
+    container_name: ieee_ssit_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - ieee_ssit_net
+
+networks:
+  ieee_ssit_net:
+    driver: bridge

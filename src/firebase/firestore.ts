@@ -1,83 +1,85 @@
 import { useState, useEffect } from "react"
-import { initFirebaseSDK, isFirebaseConfigured } from "./config"
 import { DEFAULT_ADMIN_EMAILS, normalizeEmail, isOfficialSSNEmail } from "./adminConfig"
+import {
+  teamApi,
+  eventsApi,
+  galleryApi,
+  announcementsApi,
+  contactApi,
+  membershipApi,
+  newsletterApi,
+  settingsApi,
+  adminsApi,
+  activityLogsApi,
+  type TeamMember,
+  type ChapterEvent,
+  type GalleryPhoto,
+  type Announcement,
+  type ContactSubmission,
+  type SubmissionStatus,
+  type NewsletterSubscriber,
+  type ChapterInfoData,
+  type MembershipContentData,
+  type FAQItem,
+  type AdminRecord,
+  type ActivityLog,
+} from "@/api"
+
+export type {
+  TeamMember,
+  ChapterEvent,
+  GalleryPhoto,
+  Announcement,
+  ContactSubmission,
+  SubmissionStatus,
+  NewsletterSubscriber,
+  ChapterInfoData,
+  MembershipContentData,
+  FAQItem,
+  AdminRecord,
+  ActivityLog,
+}
 
 // =========================================================================
 // 1. ADMIN ALLOWLIST MANAGEMENT & METADATA
 // =========================================================================
 
-export interface AdminRecord {
-  email: string
-  addedBy?: string
-  addedAt?: string
-  active: boolean
-}
-
-const ALLOWLIST_LOCAL_KEY = "ieee_ssit_admin_allowlist_records"
-
 export async function getAdminAllowlist(): Promise<string[]> {
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, getDoc, setDoc, serverTimestamp } = await import("firebase/firestore")
-        const docRef = doc(sdk.db, "admins", "allowlist")
-        const snapshot = await getDoc(docRef)
-        if (snapshot.exists() && Array.isArray(snapshot.data()?.emails)) {
-          const list = snapshot.data()?.emails.map((e: string) => normalizeEmail(e))
-          return Array.from(new Set([...DEFAULT_ADMIN_EMAILS, ...list]))
-        } else {
-          // Seed with the core 6 approved admins
-          await setDoc(docRef, { emails: DEFAULT_ADMIN_EMAILS, updatedAt: serverTimestamp() })
-          return DEFAULT_ADMIN_EMAILS
-        }
-      }
-    } catch (err) {
-      console.warn("Could not fetch allowlist from Firestore, using fallback:", err)
-    }
+  try {
+    const list = await adminsApi.getAll()
+    const emails = list.map((a) => normalizeEmail(a.email))
+    return Array.from(new Set([...DEFAULT_ADMIN_EMAILS, ...emails]))
+  } catch (err) {
+    console.warn("Could not fetch admins from API, using default list:", err)
+    return DEFAULT_ADMIN_EMAILS
   }
-
-  const stored = localStorage.getItem(ALLOWLIST_LOCAL_KEY)
-  if (stored) {
-    try {
-      const parsed: AdminRecord[] = JSON.parse(stored)
-      const list = parsed.map(r => normalizeEmail(r.email))
-      return Array.from(new Set([...DEFAULT_ADMIN_EMAILS, ...list]))
-    } catch {}
-  }
-  return DEFAULT_ADMIN_EMAILS
 }
 
 export async function getAdminRecords(): Promise<AdminRecord[]> {
-  const allowlist = await getAdminAllowlist()
-  const stored = localStorage.getItem(ALLOWLIST_LOCAL_KEY)
-  let existingRecords: AdminRecord[] = []
-  if (stored) {
-    try {
-      existingRecords = JSON.parse(stored)
-    } catch {}
-  }
-
-  return allowlist.map((email) => {
-    const existing = existingRecords.find(r => r.email === email)
-    return {
+  try {
+    const list = await adminsApi.getAll()
+    return list.map((a) => ({
+      email: normalizeEmail(a.email),
+      addedBy: a.added_by || a.addedBy || "Core System Config",
+      addedAt: a.addedAt || "2026-01-01",
+      active: a.active,
+    }))
+  } catch {
+    return DEFAULT_ADMIN_EMAILS.map((email) => ({
       email,
-      addedBy: existing?.addedBy || "Core System Config",
-      addedAt: existing?.addedAt || "2025-01-01",
-      active: existing?.active ?? true,
-    }
-  })
+      addedBy: "Core System Config",
+      addedAt: "2026-01-01",
+      active: true,
+    }))
+  }
 }
 
 export async function isEmailAllowlisted(email?: string | null): Promise<boolean> {
   const cleanEmail = normalizeEmail(email)
-  if (!cleanEmail) return false
-
-  if (!isOfficialSSNEmail(cleanEmail)) {
+  if (!cleanEmail || !isOfficialSSNEmail(cleanEmail)) {
     return false
   }
 
-  // Fast check: If in the 6 approved developer admins, immediately return true
   if (DEFAULT_ADMIN_EMAILS.includes(cleanEmail)) {
     return true
   }
@@ -86,61 +88,40 @@ export async function isEmailAllowlisted(email?: string | null): Promise<boolean
   return list.includes(cleanEmail)
 }
 
-export async function addAdminEmail(email: string, addedByEmail = "System Lead"): Promise<boolean> {
+export async function addAdminEmail(email: string, _addedByEmail = "System Lead"): Promise<boolean> {
   const clean = normalizeEmail(email)
   if (!isOfficialSSNEmail(clean)) return false
 
-  const currentList = await getAdminAllowlist()
-  if (!currentList.includes(clean)) {
-    const updated = [...currentList, clean]
-    await updateAdminAllowlist(updated)
-
-    // Save record with audit metadata
-    const records = await getAdminRecords()
-    records.push({
-      email: clean,
-      addedBy: addedByEmail,
-      addedAt: new Date().toISOString().split("T")[0],
-      active: true,
-    })
-    localStorage.setItem(ALLOWLIST_LOCAL_KEY, JSON.stringify(records))
-    await logAdminActivity("Added Admin", "admins", clean, `Added by ${addedByEmail}`)
+  try {
+    await adminsApi.add(clean)
     window.dispatchEvent(new Event("allowlist_changed"))
+    window.dispatchEvent(new Event("activity_changed"))
+    return true
+  } catch (err) {
+    console.error("Failed to add admin via API:", err)
+    throw err
   }
-  return true
 }
 
-export async function removeAdminEmail(emailToRemove: string, removedByEmail = "System Lead"): Promise<boolean> {
+export async function removeAdminEmail(emailToRemove: string): Promise<boolean> {
   const clean = normalizeEmail(emailToRemove)
-  const currentList = await getAdminAllowlist()
-  if (currentList.length <= 1) return false
-
-  const updated = currentList.filter(e => e !== clean)
-  await updateAdminAllowlist(updated)
-
-  const records = await getAdminRecords()
-  const filtered = records.filter(r => r.email !== clean)
-  localStorage.setItem(ALLOWLIST_LOCAL_KEY, JSON.stringify(filtered))
-  await logAdminActivity("Removed Admin", "admins", clean, `Removed by ${removedByEmail}`)
-  window.dispatchEvent(new Event("allowlist_changed"))
-  return true
+  try {
+    await adminsApi.remove(clean)
+    window.dispatchEvent(new Event("allowlist_changed"))
+    window.dispatchEvent(new Event("activity_changed"))
+    return true
+  } catch (err) {
+    console.error("Failed to remove admin via API:", err)
+    throw err
+  }
 }
 
 export async function updateAdminAllowlist(emails: string[]): Promise<boolean> {
-  const cleanEmails = Array.from(
-    new Set(emails.map(e => normalizeEmail(e)).filter(e => isOfficialSSNEmail(e)))
-  )
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, setDoc, serverTimestamp } = await import("firebase/firestore")
-        const docRef = doc(sdk.db, "admins", "allowlist")
-        await setDoc(docRef, { emails: cleanEmails, updatedAt: serverTimestamp() })
-      }
-    } catch (err) {
-      console.error("Failed to update Firestore allowlist:", err)
+  for (const email of emails) {
+    if (isOfficialSSNEmail(email)) {
+      try {
+        await adminsApi.add(email)
+      } catch {}
     }
   }
   window.dispatchEvent(new Event("allowlist_changed"))
@@ -153,57 +134,31 @@ export function useAdminAllowlist() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { doc, onSnapshot } = await import("firebase/firestore")
-          const docRef = doc(sdk.db, "admins", "allowlist")
-          unsubscribe = onSnapshot(docRef, async (docSnap) => {
-            if (docSnap.exists() && Array.isArray(docSnap.data()?.emails)) {
-              const list = docSnap.data()?.emails.map((e: string) => normalizeEmail(e))
-              const combined = Array.from(new Set([...DEFAULT_ADMIN_EMAILS, ...list]))
-              setEmails(combined)
-            } else {
-              setEmails(DEFAULT_ADMIN_EMAILS)
-            }
-            const recs = await getAdminRecords()
-            setRecords(recs)
-            setLoading(false)
-          }, async () => {
-            const res = await getAdminAllowlist()
-            const recs = await getAdminRecords()
-            setEmails(res)
-            setRecords(recs)
-            setLoading(false)
-          })
-          return
+    const load = async () => {
+      try {
+        const recs = await getAdminRecords()
+        if (isMounted) {
+          setRecords(recs)
+          setEmails(recs.map((r) => r.email))
+          setLoading(false)
+        }
+      } catch {
+        if (isMounted) {
+          setEmails(DEFAULT_ADMIN_EMAILS)
+          setLoading(false)
         }
       }
-
-      getAdminAllowlist().then(async (res) => {
-        const recs = await getAdminRecords()
-        setEmails(res)
-        setRecords(recs)
-        setLoading(false)
-      })
-
-      const handler = () => {
-        getAdminAllowlist().then(async (res) => {
-          const recs = await getAdminRecords()
-          setEmails(res)
-          setRecords(recs)
-        })
-      }
-      window.addEventListener("allowlist_changed", handler)
-      return () => window.removeEventListener("allowlist_changed", handler)
     }
 
-    init()
-
-    return () => unsubscribe()
+    load()
+    const handler = () => load()
+    window.addEventListener("allowlist_changed", handler)
+    return () => {
+      isMounted = false
+      window.removeEventListener("allowlist_changed", handler)
+    }
   }, [])
 
   return {
@@ -217,142 +172,53 @@ export function useAdminAllowlist() {
 }
 
 // =========================================================================
-// 2. ACTIVITY LOGGING SYSTEM (Lightweight Firestore Audit Trail)
+// 2. ACTIVITY LOGGING SYSTEM
 // =========================================================================
-
-export interface ActivityLog {
-  id: string
-  action: string
-  category: "events" | "gallery" | "team" | "announcements" | "inquiries" | "admins" | "settings"
-  targetTitle?: string
-  adminEmail: string
-  timestamp: string
-  details?: string
-}
-
-const ACTIVITY_LOCAL_KEY = "ieee_ssit_activity_logs"
-
-export const INITIAL_ACTIVITY_LOGS: ActivityLog[] = [
-  {
-    id: "act-1",
-    action: "Published Chapter Portal CMS",
-    category: "settings",
-    targetTitle: "Production Release 2025",
-    adminEmail: "sharruk2470048@ssn.edu.in",
-    timestamp: "2025-02-23 10:15",
-    details: "Initialized real-time Firebase multi-admin architecture.",
-  },
-  {
-    id: "act-2",
-    action: "Added Event",
-    category: "events",
-    targetTitle: "AI Ethics & Algorithmic Bias in Healthcare",
-    adminEmail: "nathaniel2470009@ssn.edu.in",
-    timestamp: "2025-02-22 16:40",
-    details: "Configured registration links and speaker profile.",
-  },
-  {
-    id: "act-3",
-    action: "Updated Admin Allowlist",
-    category: "admins",
-    targetTitle: "Core Developer Roster",
-    adminEmail: "sharruk2470048@ssn.edu.in",
-    timestamp: "2025-02-22 14:20",
-    details: "Verified 6 active SSN developer email addresses.",
-  },
-]
 
 export async function logAdminActivity(
   action: string,
   category: ActivityLog["category"],
   targetTitle?: string,
-  details?: string,
-  adminEmail = "Current Admin"
+  details?: string
 ): Promise<string> {
-  const now = new Date()
-  const timestamp = `${now.toISOString().split("T")[0]} ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-  const id = `act-${Date.now()}`
-  const logItem: ActivityLog = {
-    id,
-    action,
-    category,
-    targetTitle,
-    adminEmail,
-    timestamp,
-    details,
-  }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { collection, addDoc } = await import("firebase/firestore")
-        await addDoc(collection(sdk.db, "activity_logs"), logItem)
-      }
-    } catch (e) {
-      console.warn("Could not log to Firestore activity collection:", e)
-    }
-  }
-
-  const stored = localStorage.getItem(ACTIVITY_LOCAL_KEY)
-  let list: ActivityLog[] = stored ? JSON.parse(stored) : [...INITIAL_ACTIVITY_LOGS]
-  list.unshift(logItem)
-  if (list.length > 50) list = list.slice(0, 50)
-  localStorage.setItem(ACTIVITY_LOCAL_KEY, JSON.stringify(list))
   window.dispatchEvent(new Event("activity_changed"))
-  return id
+  return `act-${Date.now()}`
 }
 
 export function useActivityLogs() {
-  const [logs, setLogs] = useState<ActivityLog[]>(INITIAL_ACTIVITY_LOGS)
+  const [logs, setLogs] = useState<ActivityLog[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { collection, query, orderBy, limit, onSnapshot } = await import("firebase/firestore")
-          const q = query(collection(sdk.db, "activity_logs"), orderBy("timestamp", "desc"), limit(40))
-          unsubscribe = onSnapshot(q, (snapshot) => {
-            if (!snapshot.empty) {
-              const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLog))
-              setLogs(items)
-            } else {
-              setLogs(INITIAL_ACTIVITY_LOGS)
-            }
-            setLoading(false)
-          }, () => loadFromLocal())
-          return
+    const fetchLogs = async () => {
+      try {
+        const data = await activityLogsApi.getAll(50)
+        if (isMounted) {
+          const mapped = data.map((d) => ({
+            id: d.id,
+            action: d.action,
+            category: d.category as any,
+            targetTitle: d.target_title || d.targetTitle,
+            adminEmail: d.admin_email || d.adminEmail,
+            timestamp: d.timestamp_str || d.timestamp || d.created_at || "",
+            details: d.details,
+          }))
+          setLogs(mapped)
+          setLoading(false)
         }
+      } catch (err) {
+        console.warn("Could not fetch activity logs:", err)
+        if (isMounted) setLoading(false)
       }
-
-      loadFromLocal()
     }
 
-    function loadFromLocal() {
-      const stored = localStorage.getItem(ACTIVITY_LOCAL_KEY)
-      if (stored) {
-        try {
-          setLogs(JSON.parse(stored))
-        } catch {
-          setLogs(INITIAL_ACTIVITY_LOGS)
-        }
-      } else {
-        localStorage.setItem(ACTIVITY_LOCAL_KEY, JSON.stringify(INITIAL_ACTIVITY_LOGS))
-        setLogs(INITIAL_ACTIVITY_LOGS)
-      }
-      setLoading(false)
-    }
-
-    init()
-
-    const handler = () => loadFromLocal()
+    fetchLogs()
+    const handler = () => fetchLogs()
     window.addEventListener("activity_changed", handler)
     return () => {
-      unsubscribe()
+      isMounted = false
       window.removeEventListener("activity_changed", handler)
     }
   }, [])
@@ -364,159 +230,39 @@ export function useActivityLogs() {
 // 3. EVENTS DATA & ADVANCED CMS HOOKS
 // =========================================================================
 
-export interface ChapterEvent {
-  id: string
-  title: string
-  category: "Workshop" | "Hackathon" | "Symposium" | "Seminar" | "Conference" | "Webinar" | "Chapter Event" | "Other"
-  date: string
-  startTime?: string
-  endTime?: string
-  time?: string
-  location: string
-  mode: "In-Person" | "Online" | "Hybrid"
-  description: string
-  image?: string
-  registerUrl?: string
-  externalUrl?: string
-  speaker?: string
-  speakerRole?: string
-  deadline?: string
-  featured?: boolean
-  status: "upcoming" | "completed"
-  published?: boolean
-  createdAt?: string
-}
-
-export const INITIAL_EVENTS: ChapterEvent[] = [
-  {
-    id: "ev-1",
-    title: "AI Ethics & Algorithmic Bias in Healthcare Systems",
-    category: "Workshop",
-    date: "March 15, 2025",
-    time: "2:00 PM – 4:30 PM",
-    startTime: "14:00",
-    endTime: "16:30",
-    location: "SSN Central Auditorium / Hybrid",
-    mode: "Hybrid",
-    description: "An interactive hands-on workshop examining algorithmic transparency, bias mitigation in diagnostic models, and the ethical responsibility of engineers deploying AI in critical healthcare infrastructure.",
-    image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&h=500&fit=crop&auto=format",
-    registerUrl: "https://forms.gle/ssnieee-ai-ethics-2025",
-    speaker: "Dr. K. Swaminathan",
-    speakerRole: "IIT Madras AI Ethics Lab Lead",
-    deadline: "March 14, 2025",
-    featured: true,
-    status: "upcoming",
-    published: true,
-  },
-  {
-    id: "ev-2",
-    title: "Envision 2025: Tech for Humanity National Hackathon",
-    category: "Hackathon",
-    date: "April 11–12, 2025",
-    time: "36-Hour Hackathon",
-    startTime: "09:00",
-    endTime: "18:00",
-    location: "SSN Innovation & Incubation Centre",
-    mode: "In-Person",
-    description: "Annual national level hackathon focused on sustainable energy solutions, assistive technologies for disabilities, and reducing the rural digital divide. Cash prizes worth 1.5 Lakhs.",
-    image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=500&fit=crop&auto=format",
-    registerUrl: "https://unstop.com/hackathons/envision-2025-ssn",
-    speaker: "IEEE SSIT Madras Section Mentors",
-    speakerRole: "Industry Advisory Committee",
-    deadline: "April 05, 2025",
-    featured: true,
-    status: "upcoming",
-    published: true,
-  },
-  {
-    id: "ev-3",
-    title: "Universal Digital Inclusion: Bridging Rural Connectivity",
-    category: "Chapter Event",
-    date: "January 24, 2025",
-    time: "3:30 PM – 5:00 PM",
-    startTime: "15:30",
-    endTime: "17:00",
-    location: "Mini Auditorium, SSN CE",
-    mode: "In-Person",
-    description: "Distinguished panel discussion exploring mesh networking, low-power satellite terminals, and educational access in underserved rural communities across Tamil Nadu.",
-    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=500&fit=crop&auto=format",
-    speaker: "Prof. S. Ramanathan & Panel",
-    speakerRole: "Senior Members, IEEE",
-    status: "completed",
-    published: true,
-  },
-  {
-    id: "ev-4",
-    title: "IEEE ISTAS 2025 Chapter Preview & Paper Writing Sprint",
-    category: "Symposium",
-    date: "May 2, 2025",
-    time: "10:00 AM – 1:00 PM",
-    startTime: "10:00",
-    endTime: "13:00",
-    location: "ECE Seminar Hall, SSN",
-    mode: "In-Person",
-    description: "Mentorship sprint guiding student researchers to prepare, format, and submit conference papers for IEEE International Symposium on Technology and Society (ISTAS 2025).",
-    image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=500&fit=crop&auto=format",
-    registerUrl: "https://forms.gle/ssn-istas-paper-sprint",
-    deadline: "April 28, 2025",
-    featured: false,
-    status: "upcoming",
-    published: true,
-  }
-]
-
-const EVENTS_LOCAL_KEY = "ieee_ssit_events"
-
 export function useEvents() {
-  const [events, setEvents] = useState<ChapterEvent[]>(INITIAL_EVENTS)
+  const [events, setEvents] = useState<ChapterEvent[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { collection, query, orderBy, onSnapshot } = await import("firebase/firestore")
-          const q = query(collection(sdk.db, "events"), orderBy("date", "desc"))
-          unsubscribe = onSnapshot(q, (snapshot) => {
-            if (!snapshot.empty) {
-              const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChapterEvent))
-              setEvents(list)
-            } else {
-              setEvents(INITIAL_EVENTS)
-            }
-            setLoading(false)
-          }, () => loadFromLocal())
-          return
+    const fetchEvents = async () => {
+      try {
+        const list = await eventsApi.getAll()
+        if (isMounted) {
+          const normalized = list.map((e) => ({
+            ...e,
+            startTime: e.start_time || e.startTime,
+            endTime: e.end_time || e.endTime,
+            registerUrl: e.register_url || e.registerUrl,
+            externalUrl: e.external_url || e.externalUrl,
+            speakerRole: e.speaker_role || e.speakerRole,
+          }))
+          setEvents(normalized)
+          setLoading(false)
         }
+      } catch (err) {
+        console.warn("Failed to load events from FastAPI:", err)
+        if (isMounted) setLoading(false)
       }
-
-      loadFromLocal()
     }
 
-    function loadFromLocal() {
-      const stored = localStorage.getItem(EVENTS_LOCAL_KEY)
-      if (stored) {
-        try {
-          setEvents(JSON.parse(stored))
-        } catch {
-          setEvents(INITIAL_EVENTS)
-        }
-      } else {
-        localStorage.setItem(EVENTS_LOCAL_KEY, JSON.stringify(INITIAL_EVENTS))
-        setEvents(INITIAL_EVENTS)
-      }
-      setLoading(false)
-    }
-
-    init()
-
-    const handler = () => loadFromLocal()
+    fetchEvents()
+    const handler = () => fetchEvents()
     window.addEventListener("events_changed", handler)
     return () => {
-      unsubscribe()
+      isMounted = false
       window.removeEventListener("events_changed", handler)
     }
   }, [])
@@ -525,236 +271,73 @@ export function useEvents() {
 }
 
 export async function saveEvent(eventData: Omit<ChapterEvent, "id"> & { id?: string }): Promise<string> {
-  const isNew = !eventData.id
-  const id = eventData.id || `ev-${Date.now()}`
-  const fullEvent: ChapterEvent = {
+  const payload = {
     ...eventData,
-    id,
-    published: eventData.published ?? true,
-    createdAt: eventData.createdAt || new Date().toISOString(),
+    start_time: eventData.startTime || eventData.start_time,
+    end_time: eventData.endTime || eventData.end_time,
+    register_url: eventData.registerUrl || eventData.register_url,
+    external_url: eventData.externalUrl || eventData.external_url,
+    speaker_role: eventData.speakerRole || eventData.speaker_role,
   }
 
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, setDoc } = await import("firebase/firestore")
-        await setDoc(doc(sdk.db, "events", id), fullEvent, { merge: true })
-      }
-    } catch (e) {
-      console.warn("Firestore save event failed, saved locally:", e)
-    }
-  }
-
-  // Local sync
-  const stored = localStorage.getItem(EVENTS_LOCAL_KEY)
-  let list: ChapterEvent[] = stored ? JSON.parse(stored) : [...INITIAL_EVENTS]
-  const idx = list.findIndex(e => e.id === id)
-  if (idx >= 0) {
-    list[idx] = fullEvent
+  let res: ChapterEvent
+  if (eventData.id && !eventData.id.startsWith("new-")) {
+    res = await eventsApi.update(eventData.id, payload)
   } else {
-    list.unshift(fullEvent)
+    res = await eventsApi.create(payload)
   }
-  localStorage.setItem(EVENTS_LOCAL_KEY, JSON.stringify(list))
-  await logAdminActivity(
-    isNew ? "Created Event" : "Updated Event",
-    "events",
-    fullEvent.title,
-    `Category: ${fullEvent.category}, Mode: ${fullEvent.mode}`
-  )
   window.dispatchEvent(new Event("events_changed"))
-  return id
+  window.dispatchEvent(new Event("activity_changed"))
+  return res.id
 }
 
 export async function deleteEvent(id: string): Promise<boolean> {
-  const stored = localStorage.getItem(EVENTS_LOCAL_KEY)
-  let deletedTitle = id
-  if (stored) {
-    const list: ChapterEvent[] = JSON.parse(stored)
-    const target = list.find(e => e.id === id)
-    if (target) deletedTitle = target.title
-  }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, deleteDoc } = await import("firebase/firestore")
-        await deleteDoc(doc(sdk.db, "events", id))
-      }
-    } catch (e) {}
-  }
-
-  if (stored) {
-    let list: ChapterEvent[] = JSON.parse(stored)
-    list = list.filter(e => e.id !== id)
-    localStorage.setItem(EVENTS_LOCAL_KEY, JSON.stringify(list))
-    await logAdminActivity("Deleted Event", "events", deletedTitle)
-    window.dispatchEvent(new Event("events_changed"))
-  }
+  await eventsApi.delete(id)
+  window.dispatchEvent(new Event("events_changed"))
+  window.dispatchEvent(new Event("activity_changed"))
   return true
 }
 
 export async function duplicateEvent(id: string): Promise<string> {
-  const stored = localStorage.getItem(EVENTS_LOCAL_KEY)
-  let targetEvent = INITIAL_EVENTS.find(e => e.id === id)
-  if (stored) {
-    const list: ChapterEvent[] = JSON.parse(stored)
-    const found = list.find(e => e.id === id)
-    if (found) targetEvent = found
-  }
-
-  if (!targetEvent) return ""
-
-  const newId = `ev-${Date.now()}`
-  const cloned: ChapterEvent = {
-    ...targetEvent,
-    id: newId,
-    title: `${targetEvent.title} (Copy)`,
-    featured: false,
-    status: "upcoming",
-    createdAt: new Date().toISOString(),
-  }
-
-  return saveEvent(cloned)
+  const cloned = await eventsApi.duplicate(id)
+  window.dispatchEvent(new Event("events_changed"))
+  window.dispatchEvent(new Event("activity_changed"))
+  return cloned.id
 }
 
 // =========================================================================
 // 4. GALLERY DATA & HOOKS
 // =========================================================================
 
-export interface GalleryPhoto {
-  id: string
-  url: string
-  alt: string
-  label: string
-  caption?: string
-  eventName?: string
-  category: "Workshop" | "Hackathon" | "Symposium" | "Campus" | "Seminar" | "Other"
-  date?: string
-  featured?: boolean
-  order?: number
-}
-
-export const INITIAL_GALLERY: GalleryPhoto[] = [
-  {
-    id: "gal-1",
-    url: "https://images.unsplash.com/photo-1606761568499-6d2451b23c66?w=800&h=550&fit=crop&auto=format",
-    alt: "Students at computer workstations during a session",
-    label: "Technical Workshop 2025",
-    caption: "Hands-on AI ethics testing on real-world datasets.",
-    eventName: "AI Ethics & Algorithmic Bias",
-    category: "Workshop",
-    date: "Feb 2025",
-    featured: true,
-    order: 1,
-  },
-  {
-    id: "gal-2",
-    url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=550&fit=crop&auto=format",
-    alt: "Engineering student at a laptop",
-    label: "Ethics in AI Research Session",
-    caption: "Student researchers analyzing ethical implications.",
-    category: "Symposium",
-    date: "Jan 2025",
-    order: 2,
-  },
-  {
-    id: "gal-3",
-    url: "https://images.unsplash.com/photo-1778876088509-982115d463ef?w=800&h=550&fit=crop&auto=format",
-    alt: "Audience in SSN lecture hall",
-    label: "Chapter Inaugural Symposium",
-    caption: "Over 200 students attending the chapter inauguration.",
-    category: "Symposium",
-    date: "Jan 2025",
-    featured: true,
-    order: 3,
-  },
-  {
-    id: "gal-4",
-    url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=1000&fit=crop&auto=format",
-    alt: "LED technology panel",
-    label: "Assistive Tech Demonstration",
-    caption: "Smart assistive hardware prototype for visually impaired.",
-    category: "Workshop",
-    date: "Nov 2024",
-    featured: true,
-    order: 4,
-  },
-  {
-    id: "gal-5",
-    url: "https://images.unsplash.com/photo-1782388713336-fcb8aa6db8f0?w=800&h=550&fit=crop&auto=format",
-    alt: "Two students collaborating at laptop",
-    label: "Envision Hackathon Sprint",
-    caption: "Teams building rural connectivity prototypes.",
-    eventName: "Envision Hackathon",
-    category: "Hackathon",
-    date: "Oct 2024",
-    order: 5,
-  },
-  {
-    id: "gal-6",
-    url: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&h=550&fit=crop&auto=format",
-    alt: "Student in lab with engineering equipment",
-    label: "Hardware Sustainability Lab",
-    caption: "Testing e-waste recycling and circular economy circuit boards.",
-    category: "Campus",
-    date: "Sep 2024",
-    order: 6,
-  },
-]
-
-const GALLERY_LOCAL_KEY = "ieee_ssit_gallery"
-
 export function useGallery() {
-  const [gallery, setGallery] = useState<GalleryPhoto[]>(INITIAL_GALLERY)
+  const [gallery, setGallery] = useState<GalleryPhoto[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { collection, onSnapshot } = await import("firebase/firestore")
-          unsubscribe = onSnapshot(collection(sdk.db, "gallery"), (snapshot) => {
-            if (!snapshot.empty) {
-              const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GalleryPhoto))
-              setGallery(list)
-            } else {
-              setGallery(INITIAL_GALLERY)
-            }
-            setLoading(false)
-          }, () => loadFromLocal())
-          return
+    const fetchGallery = async () => {
+      try {
+        const list = await galleryApi.getAll()
+        if (isMounted) {
+          const normalized = list.map((g) => ({
+            ...g,
+            eventName: g.event_name || g.eventName,
+          }))
+          setGallery(normalized)
+          setLoading(false)
         }
+      } catch (err) {
+        console.warn("Failed to load gallery from FastAPI:", err)
+        if (isMounted) setLoading(false)
       }
-
-      loadFromLocal()
     }
 
-    function loadFromLocal() {
-      const stored = localStorage.getItem(GALLERY_LOCAL_KEY)
-      if (stored) {
-        try {
-          setGallery(JSON.parse(stored))
-        } catch {
-          setGallery(INITIAL_GALLERY)
-        }
-      } else {
-        localStorage.setItem(GALLERY_LOCAL_KEY, JSON.stringify(INITIAL_GALLERY))
-        setGallery(INITIAL_GALLERY)
-      }
-      setLoading(false)
-    }
-
-    init()
-
-    const handler = () => loadFromLocal()
+    fetchGallery()
+    const handler = () => fetchGallery()
     window.addEventListener("gallery_changed", handler)
     return () => {
-      unsubscribe()
+      isMounted = false
       window.removeEventListener("gallery_changed", handler)
     }
   }, [])
@@ -762,65 +345,27 @@ export function useGallery() {
   return { gallery, loading }
 }
 
-export async function saveGalleryPhoto(photo: Omit<GalleryPhoto, "id"> & { id?: string }) {
-  const isNew = !photo.id
-  const id = photo.id || `gal-${Date.now()}`
-  const fullPhoto: GalleryPhoto = { ...photo, id }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, setDoc } = await import("firebase/firestore")
-        await setDoc(doc(sdk.db, "gallery", id), fullPhoto, { merge: true })
-      }
-    } catch (e) {}
+export async function saveGalleryPhoto(photo: Omit<GalleryPhoto, "id"> & { id?: string }): Promise<string> {
+  const payload = {
+    ...photo,
+    event_name: photo.eventName || photo.event_name,
   }
 
-  const stored = localStorage.getItem(GALLERY_LOCAL_KEY)
-  let list: GalleryPhoto[] = stored ? JSON.parse(stored) : [...INITIAL_GALLERY]
-  const idx = list.findIndex(p => p.id === id)
-  if (idx >= 0) {
-    list[idx] = fullPhoto
+  let res: GalleryPhoto
+  if (photo.id && !photo.id.startsWith("new-")) {
+    res = await galleryApi.update(photo.id, payload)
   } else {
-    list.unshift(fullPhoto)
+    res = await galleryApi.create(payload)
   }
-  localStorage.setItem(GALLERY_LOCAL_KEY, JSON.stringify(list))
-  await logAdminActivity(
-    isNew ? "Added Gallery Photo" : "Updated Gallery Photo",
-    "gallery",
-    fullPhoto.label
-  )
   window.dispatchEvent(new Event("gallery_changed"))
-  return id
+  window.dispatchEvent(new Event("activity_changed"))
+  return res.id
 }
 
-export async function deleteGalleryPhoto(id: string) {
-  const stored = localStorage.getItem(GALLERY_LOCAL_KEY)
-  let deletedLabel = id
-  if (stored) {
-    const list: GalleryPhoto[] = JSON.parse(stored)
-    const target = list.find(p => p.id === id)
-    if (target) deletedLabel = target.label
-  }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, deleteDoc } = await import("firebase/firestore")
-        await deleteDoc(doc(sdk.db, "gallery", id))
-      }
-    } catch (e) {}
-  }
-
-  if (stored) {
-    let list: GalleryPhoto[] = JSON.parse(stored)
-    list = list.filter(p => p.id !== id)
-    localStorage.setItem(GALLERY_LOCAL_KEY, JSON.stringify(list))
-    await logAdminActivity("Deleted Gallery Photo", "gallery", deletedLabel)
-    window.dispatchEvent(new Event("gallery_changed"))
-  }
+export async function deleteGalleryPhoto(id: string): Promise<boolean> {
+  await galleryApi.delete(id)
+  window.dispatchEvent(new Event("gallery_changed"))
+  window.dispatchEvent(new Event("activity_changed"))
   return true
 }
 
@@ -828,246 +373,35 @@ export async function deleteGalleryPhoto(id: string) {
 // 5. TEAM DIRECTORY CMS
 // =========================================================================
 
-export interface TeamMember {
-  id: string
-  name: string
-  role: string
-  teamType: "Office Bearers" | "Web Development" | "Executive" | "Events" | "Design & Media" | "Editorial" | "Other"
-  department?: string
-  year: string
-  email: string
-  chapter?: string
-  quote?: string
-  photo?: string
-  linkedin?: string
-  github?: string
-  bio?: string
-  order?: number
-  active?: boolean
-}
-
-export const INITIAL_TEAM: TeamMember[] = [
-  // 1. OFFICE BEARERS (5)
-  {
-    id: "team-ob-1",
-    name: "Varun Sudheer",
-    role: "Chair",
-    teamType: "Office Bearers",
-    department: "Biomedical Engineering",
-    year: "BME III Year",
-    chapter: "SSIT_2026",
-    quote: "Some inherit a league. Some dare to build one. I choose to be.",
-    email: "varun2410158@ssn.edu.in",
-    photo: "",
-    bio: "Some inherit a league. Some dare to build one. I choose to be.",
-    order: 1,
-    active: true,
-  },
-  {
-    id: "team-ob-2",
-    name: "Mohammed Afzal",
-    role: "Vice-Chair",
-    teamType: "Office Bearers",
-    department: "Electrical & Electronics Engineering",
-    year: "EEE III Year",
-    chapter: "SSIT_2026",
-    quote: "Stay grounded, keep growing, and make every moment count.",
-    email: "",
-    photo: "",
-    bio: "Stay grounded, keep growing, and make every moment count.",
-    order: 2,
-    active: true,
-  },
-  {
-    id: "team-ob-3",
-    name: "Yuva Sriam",
-    role: "Secretary",
-    teamType: "Office Bearers",
-    department: "Biomedical Engineering",
-    year: "BME III Year",
-    chapter: "SSIT_2026",
-    quote: "Chill by nature. Serious when it matters.",
-    email: "",
-    photo: "",
-    bio: "Chill by nature. Serious when it matters.",
-    order: 3,
-    active: true,
-  },
-  {
-    id: "team-ob-4",
-    name: "Shriram S Syam",
-    role: "Joint-Sec",
-    teamType: "Office Bearers",
-    department: "Electrical & Electronics Engineering",
-    year: "EEE III Year",
-    chapter: "SSIT_2026",
-    quote: "What doesn’t kill you makes you want what likely wont gor? at 6",
-    email: "shriram2410046@ssn.edu.in",
-    photo: "",
-    bio: "What doesn’t kill you makes you want what likely wont gor? at 6",
-    order: 4,
-    active: true,
-  },
-  {
-    id: "team-ob-5",
-    name: "Smrithi S",
-    role: "Treasurer",
-    teamType: "Office Bearers",
-    department: "Biomedical Engineering",
-    year: "BME III Year",
-    chapter: "SSIT_2026",
-    quote: "I came, I saw, I overthought, I fumbled.",
-    email: "",
-    photo: "",
-    bio: "I came, I saw, I overthought, I fumbled.",
-    order: 5,
-    active: true,
-  },
-
-  // 2. WEB DEVELOPMENT TEAM (6)
-  {
-    id: "team-wd-1",
-    name: "Nathaniel Christian",
-    role: "Head",
-    teamType: "Web Development",
-    department: "Computer Science & Engineering",
-    year: "M.Tech CSE III Year",
-    chapter: "SSIT_2026",
-    quote: "Never interrupt an enemy when he’s making a mistake.",
-    email: "nathaniel2470009@ssn.edu.in",
-    photo: "",
-    bio: "Never interrupt an enemy when he’s making a mistake.",
-    order: 6,
-    active: true,
-  },
-  {
-    id: "team-wd-2",
-    name: "Pranav Vasudevan",
-    role: "Head",
-    teamType: "Web Development",
-    department: "Information Technology",
-    year: "IT III Year",
-    chapter: "SSIT_2026",
-    quote: "What?",
-    email: "pranav2410328@ssn.edu.in",
-    photo: "",
-    bio: "What?",
-    order: 7,
-    active: true,
-  },
-  {
-    id: "team-wd-3",
-    name: "Sharruk S",
-    role: "Member",
-    teamType: "Web Development",
-    department: "Computer Science & Engineering",
-    year: "M.Tech CSE III Year",
-    chapter: "SSIT_2026",
-    quote: "Building the digital face of SSIT.",
-    email: "sharruk2470048@ssn.edu.in",
-    photo: "",
-    bio: "Building the digital face of SSIT.",
-    order: 8,
-    active: true,
-  },
-  {
-    id: "team-wd-4",
-    name: "Vedika Chandra",
-    role: "Member",
-    teamType: "Web Development",
-    department: "Computer Science & Engineering",
-    year: "CSE III Year",
-    chapter: "SSIT_2026",
-    quote: "The reason your website has trust issues.",
-    email: "vedika2410432@ssn.edu.in",
-    photo: "",
-    bio: "The reason your website has trust issues.",
-    order: 9,
-    active: true,
-  },
-  {
-    id: "team-wd-5",
-    name: "Harshini PS",
-    role: "Member",
-    teamType: "Web Development",
-    department: "Computer Science & Engineering",
-    year: "CSE III Year",
-    chapter: "SSIT_2026",
-    quote: "Quiet moves, loud results. Plot twists included.",
-    email: "harshini2410197@ssn.edu.in",
-    photo: "",
-    bio: "Quiet moves, loud results. Plot twists included.",
-    order: 10,
-    active: true,
-  },
-  {
-    id: "team-wd-6",
-    name: "Harshika Sipani",
-    role: "Member",
-    teamType: "Web Development",
-    department: "Computer Science & Engineering",
-    year: "CSE III Year",
-    chapter: "SSIT_2026",
-    quote: "Calm, chaos and everything in between.",
-    email: "harshika2410326@ssn.edu.in",
-    photo: "",
-    bio: "Calm, chaos and everything in between.",
-    order: 11,
-    active: true,
-  },
-]
-
-const TEAM_LOCAL_KEY = "ieee_ssit_team_2026_v1"
-
 export function useTeam() {
-  const [team, setTeam] = useState<TeamMember[]>(INITIAL_TEAM)
+  const [team, setTeam] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { collection, onSnapshot } = await import("firebase/firestore")
-          unsubscribe = onSnapshot(collection(sdk.db, "team"), (snapshot) => {
-            if (!snapshot.empty) {
-              const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamMember))
-              setTeam(list)
-            } else {
-              setTeam(INITIAL_TEAM)
-            }
-            setLoading(false)
-          }, () => loadFromLocal())
-          return
+    const fetchTeam = async () => {
+      try {
+        const list = await teamApi.getAll()
+        if (isMounted) {
+          const normalized = list.map((m) => ({
+            ...m,
+            teamType: (m.team_type || m.teamType || "Office Bearers") as any,
+          }))
+          setTeam(normalized)
+          setLoading(false)
         }
+      } catch (err) {
+        console.warn("Failed to fetch team from FastAPI:", err)
+        if (isMounted) setLoading(false)
       }
-
-      loadFromLocal()
     }
 
-    function loadFromLocal() {
-      const stored = localStorage.getItem(TEAM_LOCAL_KEY)
-      if (stored) {
-        try {
-          setTeam(JSON.parse(stored))
-        } catch {
-          setTeam(INITIAL_TEAM)
-        }
-      } else {
-        localStorage.setItem(TEAM_LOCAL_KEY, JSON.stringify(INITIAL_TEAM))
-        setTeam(INITIAL_TEAM)
-      }
-      setLoading(false)
-    }
-
-    init()
-
-    const handler = () => loadFromLocal()
+    fetchTeam()
+    const handler = () => fetchTeam()
     window.addEventListener("team_changed", handler)
     return () => {
-      unsubscribe()
+      isMounted = false
       window.removeEventListener("team_changed", handler)
     }
   }, [])
@@ -1075,70 +409,27 @@ export function useTeam() {
   return { team, loading }
 }
 
-export async function saveTeamMember(member: Omit<TeamMember, "id"> & { id?: string }) {
-  const isNew = !member.id
-  const id = member.id || `team-${Date.now()}`
-  const fullMember: TeamMember = {
+export async function saveTeamMember(member: Omit<TeamMember, "id"> & { id?: string }): Promise<string> {
+  const payload = {
     ...member,
-    id,
-    active: member.active ?? true,
-    order: member.order ?? 10,
+    team_type: member.teamType || member.team_type || "Office Bearers",
   }
 
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, setDoc } = await import("firebase/firestore")
-        await setDoc(doc(sdk.db, "team", id), fullMember, { merge: true })
-      }
-    } catch (e) {}
-  }
-
-  const stored = localStorage.getItem(TEAM_LOCAL_KEY)
-  let list: TeamMember[] = stored ? JSON.parse(stored) : [...INITIAL_TEAM]
-  const idx = list.findIndex(m => m.id === id)
-  if (idx >= 0) {
-    list[idx] = fullMember
+  let res: TeamMember
+  if (member.id && !member.id.startsWith("new-")) {
+    res = await teamApi.update(member.id, payload)
   } else {
-    list.push(fullMember)
+    res = await teamApi.create(payload)
   }
-  localStorage.setItem(TEAM_LOCAL_KEY, JSON.stringify(list))
-  await logAdminActivity(
-    isNew ? "Added Team Member" : "Updated Team Member",
-    "team",
-    `${fullMember.name} (${fullMember.role})`
-  )
   window.dispatchEvent(new Event("team_changed"))
-  return id
+  window.dispatchEvent(new Event("activity_changed"))
+  return res.id
 }
 
-export async function deleteTeamMember(id: string) {
-  const stored = localStorage.getItem(TEAM_LOCAL_KEY)
-  let deletedName = id
-  if (stored) {
-    const list: TeamMember[] = JSON.parse(stored)
-    const target = list.find(m => m.id === id)
-    if (target) deletedName = `${target.name} (${target.role})`
-  }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, deleteDoc } = await import("firebase/firestore")
-        await deleteDoc(doc(sdk.db, "team", id))
-      }
-    } catch (e) {}
-  }
-
-  if (stored) {
-    let list: TeamMember[] = JSON.parse(stored)
-    list = list.filter(m => m.id !== id)
-    localStorage.setItem(TEAM_LOCAL_KEY, JSON.stringify(list))
-    await logAdminActivity("Removed Team Member", "team", deletedName)
-    window.dispatchEvent(new Event("team_changed"))
-  }
+export async function deleteTeamMember(id: string): Promise<boolean> {
+  await teamApi.delete(id)
+  window.dispatchEvent(new Event("team_changed"))
+  window.dispatchEvent(new Event("activity_changed"))
   return true
 }
 
@@ -1146,85 +437,38 @@ export async function deleteTeamMember(id: string) {
 // 6. ANNOUNCEMENTS & ALERT BANNER CMS
 // =========================================================================
 
-export interface Announcement {
-  id: string
-  text: string
-  ctaText?: string
-  ctaUrl?: string
-  priority: "high" | "normal" | "info"
-  status: "active" | "draft" | "scheduled" | "expired"
-  startDate?: string
-  expiryDate?: string
-  active: boolean
-  createdAt: string
-  updatedAt?: string
-}
-
-export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: "ann-2",
-    text: "SSIT Student Chapter Call for Core Committee & Web Dev Volunteers for Academic Year 2025–26.",
-    ctaText: "Join Team",
-    ctaUrl: "/membership",
-    priority: "normal",
-    status: "active",
-    active: false,
-    createdAt: "2025-02-18",
-    startDate: "2025-02-18",
-  },
-]
-
-const ANNOUNCEMENTS_LOCAL_KEY = "ieee_ssit_announcements"
-
 export function useAnnouncements() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS)
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { collection, onSnapshot } = await import("firebase/firestore")
-          unsubscribe = onSnapshot(collection(sdk.db, "announcements"), (snapshot) => {
-            if (!snapshot.empty) {
-              const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement))
-              setAnnouncements(list)
-            } else {
-              setAnnouncements(INITIAL_ANNOUNCEMENTS)
-            }
-            setLoading(false)
-          }, () => loadFromLocal())
-          return
+    const fetchAnnouncements = async () => {
+      try {
+        const list = await announcementsApi.getAll()
+        if (isMounted) {
+          const normalized = list.map((a) => ({
+            ...a,
+            ctaText: a.cta_text || a.ctaText,
+            ctaUrl: a.cta_url || a.ctaUrl,
+            startDate: a.start_date || a.startDate,
+            expiryDate: a.expiry_date || a.expiryDate,
+          }))
+          setAnnouncements(normalized)
+          setLoading(false)
         }
+      } catch (err) {
+        console.warn("Failed to load announcements from FastAPI:", err)
+        if (isMounted) setLoading(false)
       }
-
-      loadFromLocal()
     }
 
-    function loadFromLocal() {
-      const stored = localStorage.getItem(ANNOUNCEMENTS_LOCAL_KEY)
-      if (stored) {
-        try {
-          setAnnouncements(JSON.parse(stored))
-        } catch {
-          setAnnouncements(INITIAL_ANNOUNCEMENTS)
-        }
-      } else {
-        localStorage.setItem(ANNOUNCEMENTS_LOCAL_KEY, JSON.stringify(INITIAL_ANNOUNCEMENTS))
-        setAnnouncements(INITIAL_ANNOUNCEMENTS)
-      }
-      setLoading(false)
-    }
-
-    init()
-
-    const handler = () => loadFromLocal()
+    fetchAnnouncements()
+    const handler = () => fetchAnnouncements()
     window.addEventListener("announcements_changed", handler)
     return () => {
-      unsubscribe()
+      isMounted = false
       window.removeEventListener("announcements_changed", handler)
     }
   }, [])
@@ -1232,72 +476,30 @@ export function useAnnouncements() {
   return { announcements, loading }
 }
 
-export async function saveAnnouncement(ann: Omit<Announcement, "id" | "createdAt"> & { id?: string }) {
-  const isNew = !ann.id
-  const id = ann.id || `ann-${Date.now()}`
-  const full: Announcement = {
+export async function saveAnnouncement(ann: Omit<Announcement, "id" | "createdAt"> & { id?: string }): Promise<string> {
+  const payload = {
     ...ann,
-    id,
-    active: ann.active ?? true,
-    status: ann.status ?? (ann.active ? "active" : "draft"),
-    createdAt: new Date().toISOString().split("T")[0],
-    updatedAt: new Date().toISOString().split("T")[0],
+    cta_text: ann.ctaText || ann.cta_text,
+    cta_url: ann.ctaUrl || ann.cta_url,
+    start_date: ann.startDate || ann.start_date,
+    expiry_date: ann.expiryDate || ann.expiry_date,
   }
 
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, setDoc } = await import("firebase/firestore")
-        await setDoc(doc(sdk.db, "announcements", id), full, { merge: true })
-      }
-    } catch (e) {}
-  }
-
-  const stored = localStorage.getItem(ANNOUNCEMENTS_LOCAL_KEY)
-  let list: Announcement[] = stored ? JSON.parse(stored) : [...INITIAL_ANNOUNCEMENTS]
-  const idx = list.findIndex(a => a.id === id)
-  if (idx >= 0) {
-    list[idx] = full
+  let res: Announcement
+  if (ann.id && !ann.id.startsWith("new-")) {
+    res = await announcementsApi.update(ann.id, payload)
   } else {
-    list.unshift(full)
+    res = await announcementsApi.create(payload)
   }
-  localStorage.setItem(ANNOUNCEMENTS_LOCAL_KEY, JSON.stringify(list))
-  await logAdminActivity(
-    isNew ? "Published Announcement" : "Updated Announcement",
-    "announcements",
-    full.text.substring(0, 45) + "..."
-  )
   window.dispatchEvent(new Event("announcements_changed"))
-  return id
+  window.dispatchEvent(new Event("activity_changed"))
+  return res.id
 }
 
-export async function deleteAnnouncement(id: string) {
-  const stored = localStorage.getItem(ANNOUNCEMENTS_LOCAL_KEY)
-  let deletedText = id
-  if (stored) {
-    const list: Announcement[] = JSON.parse(stored)
-    const target = list.find(a => a.id === id)
-    if (target) deletedText = target.text.substring(0, 40) + "..."
-  }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, deleteDoc } = await import("firebase/firestore")
-        await deleteDoc(doc(sdk.db, "announcements", id))
-      }
-    } catch (e) {}
-  }
-
-  if (stored) {
-    let list: Announcement[] = JSON.parse(stored)
-    list = list.filter(a => a.id !== id)
-    localStorage.setItem(ANNOUNCEMENTS_LOCAL_KEY, JSON.stringify(list))
-    await logAdminActivity("Deleted Announcement", "announcements", deletedText)
-    window.dispatchEvent(new Event("announcements_changed"))
-  }
+export async function deleteAnnouncement(id: string): Promise<boolean> {
+  await announcementsApi.delete(id)
+  window.dispatchEvent(new Event("announcements_changed"))
+  window.dispatchEvent(new Event("activity_changed"))
   return true
 }
 
@@ -1305,125 +507,36 @@ export async function deleteAnnouncement(id: string) {
 // 7. INQUIRIES & MEMBERSHIP APPLICATIONS INBOX
 // =========================================================================
 
-export type SubmissionStatus =
-  | "new"
-  | "reviewed"
-  | "resolved"
-  | "archived"
-  | "under_review"
-  | "approved"
-  | "rejected"
-  | "contacted"
-
-export interface ContactSubmission {
-  id: string
-  name: string
-  email: string
-  department: string
-  year?: string
-  type: "membership" | "general" | "speaker" | "sponsorship"
-  interest?: string
-  ieeeMember?: string
-  ssitMember?: string
-  message: string
-  status: SubmissionStatus
-  timestamp: string
-}
-
-const CONTACT_LOCAL_KEY = "ieee_ssit_inquiries"
-
-export const INITIAL_SUBMISSIONS: ContactSubmission[] = [
-  {
-    id: "sub-1",
-    name: "Siddharth V.",
-    email: "siddharth2310022@ssn.edu.in",
-    department: "ECE",
-    year: "2nd Year",
-    type: "membership",
-    interest: "Universal Access to Technology & Assistive Hardware",
-    ieeeMember: "Yes",
-    ssitMember: "Pending",
-    message: "I would like to join the SSIT chapter and contribute to the assistive technology hardware projects.",
-    status: "new",
-    timestamp: "2025-02-22 14:30",
-  },
-  {
-    id: "sub-2",
-    name: "Meera Krishnan",
-    email: "meera2210105@ssn.edu.in",
-    department: "IT",
-    year: "3rd Year",
-    type: "general",
-    interest: "AI Ethics & Algorithmic Transparency",
-    message: "Can students from non-circuit branches volunteer for the Envision 2025 hackathon organizing committee?",
-    status: "reviewed",
-    timestamp: "2025-02-21 11:15",
-  },
-  {
-    id: "sub-3",
-    name: "Rohit Anand",
-    email: "rohit2410881@ssn.edu.in",
-    department: "CSE",
-    year: "1st Year",
-    type: "membership",
-    interest: "Human-Centered Computing & Sustainable Tech",
-    ieeeMember: "No",
-    ssitMember: "No",
-    message: "Interested in learning web development and AI governance. How do I complete student branch registration?",
-    status: "under_review",
-    timestamp: "2025-02-20 09:45",
-  }
-]
-
 export function useContactSubmissions() {
-  const [submissions, setSubmissions] = useState<ContactSubmission[]>(INITIAL_SUBMISSIONS)
+  const [submissions, setSubmissions] = useState<ContactSubmission[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { collection, onSnapshot } = await import("firebase/firestore")
-          unsubscribe = onSnapshot(collection(sdk.db, "contact_inquiries"), (snapshot) => {
-            if (!snapshot.empty) {
-              const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission))
-              setSubmissions(list)
-            } else {
-              setSubmissions(INITIAL_SUBMISSIONS)
-            }
-            setLoading(false)
-          }, () => loadFromLocal())
-          return
+    const fetchSubmissions = async () => {
+      try {
+        const list = await contactApi.getInquiries()
+        if (isMounted) {
+          const normalized = list.map((s) => ({
+            ...s,
+            type: (s.inquiry_type || s.type || "general") as any,
+            timestamp: s.created_at || s.timestamp || "",
+          }))
+          setSubmissions(normalized)
+          setLoading(false)
         }
+      } catch (err) {
+        console.warn("Could not fetch submissions from FastAPI:", err)
+        if (isMounted) setLoading(false)
       }
-
-      loadFromLocal()
     }
 
-    function loadFromLocal() {
-      const stored = localStorage.getItem(CONTACT_LOCAL_KEY)
-      if (stored) {
-        try {
-          setSubmissions(JSON.parse(stored))
-        } catch {
-          setSubmissions(INITIAL_SUBMISSIONS)
-        }
-      } else {
-        localStorage.setItem(CONTACT_LOCAL_KEY, JSON.stringify(INITIAL_SUBMISSIONS))
-        setSubmissions(INITIAL_SUBMISSIONS)
-      }
-      setLoading(false)
-    }
-
-    init()
-
-    const handler = () => loadFromLocal()
+    fetchSubmissions()
+    const handler = () => fetchSubmissions()
     window.addEventListener("inquiries_changed", handler)
     return () => {
-      unsubscribe()
+      isMounted = false
       window.removeEventListener("inquiries_changed", handler)
     }
   }, [])
@@ -1432,136 +545,57 @@ export function useContactSubmissions() {
 }
 
 export async function submitContactInquiry(data: Omit<ContactSubmission, "id" | "status" | "timestamp">) {
-  const now = new Date()
-  const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-  const id = `sub-${Date.now()}`
-  const submission: ContactSubmission = {
+  const payload = {
     ...data,
-    id,
-    status: "new",
-    timestamp,
+    type: data.type || data.inquiry_type || "general",
   }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { collection, addDoc } = await import("firebase/firestore")
-        await addDoc(collection(sdk.db, "contact_inquiries"), submission)
-      }
-    } catch (e) {}
-  }
-
-  const stored = localStorage.getItem(CONTACT_LOCAL_KEY)
-  let list: ContactSubmission[] = stored ? JSON.parse(stored) : [...INITIAL_SUBMISSIONS]
-  list.unshift(submission)
-  localStorage.setItem(CONTACT_LOCAL_KEY, JSON.stringify(list))
+  const res = await contactApi.submit(payload)
   window.dispatchEvent(new Event("inquiries_changed"))
-  return id
+  return res.id
 }
 
 export async function updateSubmissionStatus(id: string, status: SubmissionStatus) {
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, updateDoc } = await import("firebase/firestore")
-        await updateDoc(doc(sdk.db, "contact_inquiries", id), { status })
-      }
-    } catch (e) {}
-  }
-
-  const stored = localStorage.getItem(CONTACT_LOCAL_KEY)
-  if (stored) {
-    let list: ContactSubmission[] = JSON.parse(stored)
-    const item = list.find(s => s.id === id)
-    if (item) {
-      item.status = status
-      await logAdminActivity("Updated Inquiry Status", "inquiries", item.name, `Marked as ${status}`)
-    }
-    localStorage.setItem(CONTACT_LOCAL_KEY, JSON.stringify(list))
-    window.dispatchEvent(new Event("inquiries_changed"))
-  }
+  await contactApi.updateStatus(id, status)
+  window.dispatchEvent(new Event("inquiries_changed"))
+  window.dispatchEvent(new Event("activity_changed"))
   return true
 }
 
 export async function deleteSubmission(id: string) {
-  const stored = localStorage.getItem(CONTACT_LOCAL_KEY)
-  let deletedName = id
-  if (stored) {
-    const list: ContactSubmission[] = JSON.parse(stored)
-    const target = list.find(s => s.id === id)
-    if (target) deletedName = target.name
-  }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, deleteDoc } = await import("firebase/firestore")
-        await deleteDoc(doc(sdk.db, "contact_inquiries", id))
-      }
-    } catch (e) {}
-  }
-
-  if (stored) {
-    let list: ContactSubmission[] = JSON.parse(stored)
-    list = list.filter(s => s.id !== id)
-    localStorage.setItem(CONTACT_LOCAL_KEY, JSON.stringify(list))
-    await logAdminActivity("Deleted Inquiry", "inquiries", deletedName)
-    window.dispatchEvent(new Event("inquiries_changed"))
-  }
+  await contactApi.delete(id)
+  window.dispatchEvent(new Event("inquiries_changed"))
+  window.dispatchEvent(new Event("activity_changed"))
   return true
 }
 
 // =========================================================================
-// 7.5 NEWSLETTER SUBSCRIBERS (`newsletter_subscribers`)
+// 7.5 NEWSLETTER SUBSCRIBERS
 // =========================================================================
-
-export interface NewsletterSubscriber {
-  id: string
-  email: string
-  timestamp: string
-}
-
-const NEWSLETTER_LOCAL_KEY = "ieee_ssit_newsletter_subscribers"
 
 export function useNewsletterSubscribers() {
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { collection, onSnapshot } = await import("firebase/firestore")
-          unsubscribe = onSnapshot(collection(sdk.db, "newsletter_subscribers"), (snapshot) => {
-            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NewsletterSubscriber))
-            setSubscribers(list)
-            setLoading(false)
-          }, () => loadFromLocal())
-          return
+    const fetchSubs = async () => {
+      try {
+        const list = await newsletterApi.getAll()
+        if (isMounted) {
+          setSubscribers(list.map((s) => ({ ...s, timestamp: s.created_at || s.timestamp || "" })))
+          setLoading(false)
         }
+      } catch (err) {
+        if (isMounted) setLoading(false)
       }
-
-      loadFromLocal()
     }
 
-    function loadFromLocal() {
-      const stored = localStorage.getItem(NEWSLETTER_LOCAL_KEY)
-      setSubscribers(stored ? JSON.parse(stored) : [])
-      setLoading(false)
-    }
-
-    init()
-
-    const handler = () => loadFromLocal()
+    fetchSubs()
+    const handler = () => fetchSubs()
     window.addEventListener("newsletter_changed", handler)
     return () => {
-      unsubscribe()
+      isMounted = false
       window.removeEventListener("newsletter_changed", handler)
     }
   }, [])
@@ -1570,87 +604,24 @@ export function useNewsletterSubscribers() {
 }
 
 export async function subscribeToNewsletter(email: string): Promise<"ok" | "duplicate"> {
-  const normalized = email.trim().toLowerCase()
-
-  const stored = localStorage.getItem(NEWSLETTER_LOCAL_KEY)
-  const list: NewsletterSubscriber[] = stored ? JSON.parse(stored) : []
-  if (list.some(s => s.email.toLowerCase() === normalized)) {
+  try {
+    await newsletterApi.subscribe(email)
+    window.dispatchEvent(new Event("newsletter_changed"))
+    return "ok"
+  } catch (err) {
     return "duplicate"
   }
-
-  const subscriber: NewsletterSubscriber = {
-    id: `sub-${Date.now()}`,
-    email: normalized,
-    timestamp: new Date().toISOString(),
-  }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { collection, addDoc } = await import("firebase/firestore")
-        await addDoc(collection(sdk.db, "newsletter_subscribers"), subscriber)
-      }
-    } catch (e) {}
-  }
-
-  list.unshift(subscriber)
-  localStorage.setItem(NEWSLETTER_LOCAL_KEY, JSON.stringify(list))
-  window.dispatchEvent(new Event("newsletter_changed"))
-  return "ok"
 }
 
 export async function deleteNewsletterSubscriber(id: string) {
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, deleteDoc } = await import("firebase/firestore")
-        await deleteDoc(doc(sdk.db, "newsletter_subscribers", id))
-      }
-    } catch (e) {}
-  }
-
-  const stored = localStorage.getItem(NEWSLETTER_LOCAL_KEY)
-  if (stored) {
-    let list: NewsletterSubscriber[] = JSON.parse(stored)
-    list = list.filter(s => s.id !== id)
-    localStorage.setItem(NEWSLETTER_LOCAL_KEY, JSON.stringify(list))
-    window.dispatchEvent(new Event("newsletter_changed"))
-  }
+  await newsletterApi.delete(id)
+  window.dispatchEvent(new Event("newsletter_changed"))
   return true
 }
 
 // =========================================================================
-// 8. CHAPTER INFO & ABOUT CONTENT CMS (`settings/chapter_info`)
+// 8. CHAPTER INFO & ABOUT CONTENT CMS
 // =========================================================================
-
-export interface ChapterInfoData {
-  chapterName: string
-  tagline: string
-  mission: string
-  vision: string
-  corePhilosophy: string
-  keyTenets: string[]
-  officialEmail: string
-  location: string
-  chairName: string
-  chairEmail: string
-  socialLinks: {
-    instagram?: string
-    linkedin?: string
-    github?: string
-    twitter?: string
-    youtube?: string
-  }
-  focusAreas: Array<{
-    title: string
-    desc: string
-    contactName: string
-    contactEmail: string
-    accent: string
-  }>
-}
 
 export const DEFAULT_CHAPTER_INFO: ChapterInfoData = {
   chapterName: "IEEE Society on Social Implications of Technology — SSN Student Branch Chapter",
@@ -1697,56 +668,33 @@ export const DEFAULT_CHAPTER_INFO: ChapterInfoData = {
   ],
 }
 
-const CHAPTER_INFO_LOCAL_KEY = "ieee_ssit_chapter_info_2026_v1"
-
 export function useChapterInfo() {
   const [chapterInfo, setChapterInfo] = useState<ChapterInfoData>(DEFAULT_CHAPTER_INFO)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { doc, onSnapshot } = await import("firebase/firestore")
-          const docRef = doc(sdk.db, "settings", "chapter_info")
-          unsubscribe = onSnapshot(docRef, (snap) => {
-            if (snap.exists()) {
-              setChapterInfo({ ...DEFAULT_CHAPTER_INFO, ...snap.data() })
-            } else {
-              setChapterInfo(DEFAULT_CHAPTER_INFO)
-            }
-            setLoading(false)
-          }, () => loadFromLocal())
-          return
+    const fetchInfo = async () => {
+      try {
+        const res = await settingsApi.getChapterInfo()
+        if (isMounted && res && res.value) {
+          setChapterInfo({ ...DEFAULT_CHAPTER_INFO, ...res.value })
+          setLoading(false)
         }
-      }
-
-      loadFromLocal()
-    }
-
-    function loadFromLocal() {
-      const stored = localStorage.getItem(CHAPTER_INFO_LOCAL_KEY)
-      if (stored) {
-        try {
-          setChapterInfo({ ...DEFAULT_CHAPTER_INFO, ...JSON.parse(stored) })
-        } catch {
+      } catch (err) {
+        if (isMounted) {
           setChapterInfo(DEFAULT_CHAPTER_INFO)
+          setLoading(false)
         }
-      } else {
-        setChapterInfo(DEFAULT_CHAPTER_INFO)
       }
-      setLoading(false)
     }
 
-    init()
-
-    const handler = () => loadFromLocal()
+    fetchInfo()
+    const handler = () => fetchInfo()
     window.addEventListener("chapter_info_changed", handler)
     return () => {
-      unsubscribe()
+      isMounted = false
       window.removeEventListener("chapter_info_changed", handler)
     }
   }, [])
@@ -1755,54 +703,15 @@ export function useChapterInfo() {
 }
 
 export async function saveChapterInfo(data: Partial<ChapterInfoData>): Promise<boolean> {
-  const merged: ChapterInfoData = { ...DEFAULT_CHAPTER_INFO, ...data }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, setDoc } = await import("firebase/firestore")
-        await setDoc(doc(sdk.db, "settings", "chapter_info"), merged, { merge: true })
-      }
-    } catch (e) {
-      console.warn("Firestore save chapter info failed, saved locally:", e)
-    }
-  }
-
-  localStorage.setItem(CHAPTER_INFO_LOCAL_KEY, JSON.stringify(merged))
-  await logAdminActivity("Updated Chapter Information", "settings", "Mission, Vision & Focus Areas")
+  await settingsApi.updateChapterInfo(data)
   window.dispatchEvent(new Event("chapter_info_changed"))
+  window.dispatchEvent(new Event("activity_changed"))
   return true
 }
 
 // =========================================================================
-// 9. MEMBERSHIP CONTENT & FAQS CMS (`settings/membership_content`)
+// 9. MEMBERSHIP CONTENT & FAQS CMS
 // =========================================================================
-
-export interface FAQItem {
-  id: string
-  question: string
-  answer: string
-  active: boolean
-  order: number
-}
-
-export interface MembershipContentData {
-  joinPortalUrl: string
-  brochureUrl?: string
-  steps: Array<{
-    step: string
-    title: string
-    desc: string
-    linkText?: string
-    linkUrl?: string
-  }>
-  benefits: Array<{
-    title: string
-    desc: string
-  }>
-  faqs: FAQItem[]
-}
 
 export const DEFAULT_MEMBERSHIP_CONTENT: MembershipContentData = {
   joinPortalUrl: "https://www.ieee.org/membership/join/index.html",
@@ -1870,56 +779,33 @@ export const DEFAULT_MEMBERSHIP_CONTENT: MembershipContentData = {
   ],
 }
 
-const MEMBERSHIP_INFO_LOCAL_KEY = "ieee_ssit_membership_info"
-
 export function useMembershipContent() {
   const [membershipContent, setMembershipContent] = useState<MembershipContentData>(DEFAULT_MEMBERSHIP_CONTENT)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let unsubscribe = () => {}
+    let isMounted = true
 
-    const init = async () => {
-      if (isFirebaseConfigured) {
-        const sdk = await initFirebaseSDK()
-        if (sdk && sdk.db) {
-          const { doc, onSnapshot } = await import("firebase/firestore")
-          const docRef = doc(sdk.db, "settings", "membership_content")
-          unsubscribe = onSnapshot(docRef, (snap) => {
-            if (snap.exists()) {
-              setMembershipContent({ ...DEFAULT_MEMBERSHIP_CONTENT, ...snap.data() })
-            } else {
-              setMembershipContent(DEFAULT_MEMBERSHIP_CONTENT)
-            }
-            setLoading(false)
-          }, () => loadFromLocal())
-          return
+    const fetchContent = async () => {
+      try {
+        const res = await settingsApi.getMembershipContent()
+        if (isMounted && res && res.value) {
+          setMembershipContent({ ...DEFAULT_MEMBERSHIP_CONTENT, ...res.value })
+          setLoading(false)
         }
-      }
-
-      loadFromLocal()
-    }
-
-    function loadFromLocal() {
-      const stored = localStorage.getItem(MEMBERSHIP_INFO_LOCAL_KEY)
-      if (stored) {
-        try {
-          setMembershipContent({ ...DEFAULT_MEMBERSHIP_CONTENT, ...JSON.parse(stored) })
-        } catch {
+      } catch (err) {
+        if (isMounted) {
           setMembershipContent(DEFAULT_MEMBERSHIP_CONTENT)
+          setLoading(false)
         }
-      } else {
-        setMembershipContent(DEFAULT_MEMBERSHIP_CONTENT)
       }
-      setLoading(false)
     }
 
-    init()
-
-    const handler = () => loadFromLocal()
+    fetchContent()
+    const handler = () => fetchContent()
     window.addEventListener("membership_info_changed", handler)
     return () => {
-      unsubscribe()
+      isMounted = false
       window.removeEventListener("membership_info_changed", handler)
     }
   }, [])
@@ -1928,22 +814,8 @@ export function useMembershipContent() {
 }
 
 export async function saveMembershipContent(data: Partial<MembershipContentData>): Promise<boolean> {
-  const merged: MembershipContentData = { ...DEFAULT_MEMBERSHIP_CONTENT, ...data }
-
-  if (isFirebaseConfigured) {
-    try {
-      const sdk = await initFirebaseSDK()
-      if (sdk && sdk.db) {
-        const { doc, setDoc } = await import("firebase/firestore")
-        await setDoc(doc(sdk.db, "settings", "membership_content"), merged, { merge: true })
-      }
-    } catch (e) {
-      console.warn("Firestore save membership content failed, saved locally:", e)
-    }
-  }
-
-  localStorage.setItem(MEMBERSHIP_INFO_LOCAL_KEY, JSON.stringify(merged))
-  await logAdminActivity("Updated Membership Content & FAQs", "settings", "Steps, Benefits & FAQ Items")
+  await settingsApi.updateMembershipContent(data)
   window.dispatchEvent(new Event("membership_info_changed"))
+  window.dispatchEvent(new Event("activity_changed"))
   return true
 }
