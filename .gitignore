@@ -44,3 +44,4 @@ backend/.env.*
 !backend/.env.example
 .pytest_cache/
 
+test.db
