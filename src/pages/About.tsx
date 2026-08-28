@@ -7,7 +7,7 @@ import { useTeam, useChapterInfo } from "@/firebase/firestore"
 import { useDocumentTitle } from "@/hooks/useDocumentTitle"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { PersonCardSkeletonGrid } from "@/components/ui/Skeleton"
-import ssitLogo from "@/assets/images/logo.jpg"
+import ssitLogo from "@/assets/images/ssit-logo.png"
 
 function getMemberInitials(name: string): string {
   const parts = name.trim().split(/\s+/)

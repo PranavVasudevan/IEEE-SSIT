@@ -6,6 +6,7 @@ import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { subscribeToNewsletter } from "@/firebase/firestore"
 import { useToast } from "@/components/ui/Toast"
+import ssitLogo from "@/assets/images/ssit-logo.png"
 
 export function Footer() {
   const { showToast } = useToast()
@@ -41,13 +42,25 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="font-display font-bold text-lg tracking-wide" style={{ color: solid("ink") }}>
-                IEEE SSIT
-              </span>
-              <span className="px-2 py-0.5 text-[10px] font-sans-ui uppercase tracking-wider font-semibold rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                SSN Student Chapter
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="p-1 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10">
+                <img
+                  src={ssitLogo}
+                  alt="IEEE SSIT"
+                  className="h-8 w-auto object-contain rounded"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none"
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-display font-bold text-lg tracking-wide" style={{ color: solid("ink") }}>
+                  IEEE SSIT
+                </span>
+                <span className="px-2 py-0.5 text-[10px] font-sans-ui uppercase tracking-wider font-semibold rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                  SSN Student Chapter
+                </span>
+              </div>
             </div>
             <p className="font-sans-ui text-xs leading-relaxed max-w-sm" style={{ color: solid("muted") }}>
               {orgInfo.description}

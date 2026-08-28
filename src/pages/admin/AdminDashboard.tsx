@@ -42,6 +42,7 @@ import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useToast } from "@/components/ui/Toast"
 import { ConfirmModal } from "@/components/ui/ConfirmModal"
+import ssitLogo from "@/assets/images/ssit-logo.png"
 
 type TabKey =
   | "dashboard"
@@ -678,8 +679,8 @@ export default function AdminDashboard() {
           {/* Sidebar Chapter Branding */}
           <div className="p-5 border-b border-slate-800 flex items-center justify-between gap-3">
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="p-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 group-hover:scale-105 transition-transform">
-                <Icons.Shield size={20} />
+              <div className="p-1 rounded-xl bg-slate-900 border border-slate-800 group-hover:scale-105 transition-transform">
+                <img src={ssitLogo} alt="IEEE SSIT" className="h-6 w-auto object-contain rounded" />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="font-display font-bold text-sm tracking-wide text-white truncate">

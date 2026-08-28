@@ -4,7 +4,7 @@ import { useAuth, loginWithGoogle, logout, simulateLoginWithEmail } from "@/fire
 import { DEFAULT_ADMIN_EMAILS, isOfficialSSNEmail } from "@/firebase/adminConfig"
 import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
-import ssitLogo from "@/assets/images/logo.jpg"
+import ssitLogo from "@/assets/images/ssit-logo.png"
 
 export default function AdminLogin() {
   const { user, isAuthorizedAdmin, loading } = useAuth()

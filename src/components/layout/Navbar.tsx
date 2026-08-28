@@ -6,7 +6,7 @@ import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useAnnouncements } from "@/firebase/firestore"
 import { SearchModal } from "@/components/ui/SearchModal"
-import ssitLogo from "@/assets/images/logo.jpg"
+import ssitLogo from "@/assets/images/ssit-logo.png"
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
