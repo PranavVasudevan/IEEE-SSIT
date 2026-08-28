@@ -21,12 +21,18 @@ export function Hero() {
           </div>
           <div className="animate-fade-up" style={{ animationDelay: ".3s" }}>
             <div
-              className="relative aspect-[4/5] overflow-hidden mb-6 flex items-center justify-center"
-              style={{ background: solid("bgWarm"), border: `1px dashed ${tint("border", 0.9)}` }}
+              className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-6 flex items-center justify-center p-8 transition-all duration-300 hover:scale-[1.01]"
+              style={{
+                background: `linear-gradient(145deg, rgba(var(--c-bg-rgb), 0.95), rgba(var(--c-bg-warm-rgb), 0.85))`,
+                border: `1px solid ${tint("border", 0.8)}`,
+                boxShadow: `0 20px 40px -15px ${tint("black", 0.08)}`,
+              }}
             >
-              <span className="font-sans-ui text-xs uppercase tracking-[.14em] text-center px-6" style={{ color: solid("muted") }}>
-                Chapter photo coming soon
-              </span>
+              <img
+                src={ssitLogo}
+                alt="IEEE SSIT SSN Chapter Emblem"
+                className="max-h-[85%] max-w-[85%] object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105"
+              />
             </div>
             <p className="font-sans-ui text-sm md:text-base leading-relaxed max-w-md" style={{ color: solid("muted") }}>We explore the profound intersection of technology and humanity through critical inquiry, ethical practice, and meaningful dialogue.</p>
           </div>
