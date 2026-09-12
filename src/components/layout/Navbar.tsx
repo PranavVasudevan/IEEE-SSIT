@@ -8,6 +8,21 @@ import { Icons } from "@/components/ui/Icons"
 import { useAnnouncements } from "@/firebase/firestore"
 import { SearchModal } from "@/components/ui/SearchModal"
 import ssitLogo from "@/assets/images/ssit-logo.png"
+import {
+  playMenuOpenSound,
+  playMenuCloseSound,
+  playMenuSelectSound,
+} from "@/utils/soundEffects"
+
+const mobileNavLinks = [
+  { label: "Home", to: "/", icon: Icons.Home },
+  { label: "About", to: "/about", icon: Icons.About },
+  { label: "Events", to: "/events", icon: Icons.Calendar },
+  { label: "Activities", to: "/activities", icon: Icons.Flag },
+  { label: "Membership", to: "/membership", icon: Icons.Users },
+  { label: "Gallery", to: "/gallery", icon: Icons.Gallery },
+  { label: "Contact", to: "/contact", icon: Icons.Mail },
+]
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
@@ -21,10 +36,51 @@ export function Navbar() {
         e.preventDefault()
         setSearchOpen(true)
       }
+      if (e.key === "Escape" && open) {
+        playMenuCloseSound()
+        setOpen(false)
+      }
     }
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [])
+  }, [open])
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = "unset"
+    }
+    return () => {
+      document.body.style.overflow = "unset"
+    }
+  }, [open])
+
+  // Close menu when route changes
+  useEffect(() => {
+    setOpen(false)
+  }, [location.pathname])
+
+  const toggleMenu = () => {
+    if (!open) {
+      playMenuOpenSound()
+      setOpen(true)
+    } else {
+      playMenuCloseSound()
+      setOpen(false)
+    }
+  }
+
+  const handleLinkClick = () => {
+    playMenuSelectSound()
+    setOpen(false)
+  }
+
+  const handleBackdropClick = () => {
+    playMenuCloseSound()
+    setOpen(false)
+  }
 
   // Get live active announcement if published by an admin
   const activeAnnouncement = announcements.find(
@@ -143,73 +199,109 @@ export function Navbar() {
               Join Chapter
             </Link>
 
-            {/* Mobile Hamburger */}
+            {/* Mobile Hamburger / Menu Tab Button */}
             <button
-              className="lg:hidden p-2 rounded-lg bg-black/5 dark:bg-white/5"
-              onClick={() => setOpen(!open)}
-              aria-label="Toggle menu"
+              type="button"
+              data-no-shockwave="true"
+              onClick={toggleMenu}
+              aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={open}
+              className={`lg:hidden p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-center ${
+                open
+                  ? "border-cyan-500/50 bg-cyan-500/15 text-cyan-300 shadow-md shadow-cyan-500/10"
+                  : "border-slate-800 bg-black/10 dark:bg-white/5 text-slate-300 hover:text-white hover:border-slate-700 active:scale-95"
+              }`}
             >
               {open ? (
-                <Icons.X size={20} />
+                <Icons.X size={18} />
               ) : (
-                <div className="space-y-1.2">
-                  <span className="block w-5 h-0.5" style={{ background: solid("ink") }} />
-                  <span className="block w-5 h-0.5" style={{ background: solid("ink") }} />
-                  <span className="block w-3.5 h-0.5" style={{ background: solid("ink") }} />
+                <div className="w-4.5 h-3.5 flex flex-col justify-between py-0.5">
+                  <span className="block w-4.5 h-0.5 rounded-full bg-current" />
+                  <span className="block w-3 h-0.5 rounded-full bg-current ml-auto" />
+                  <span className="block w-4.5 h-0.5 rounded-full bg-current" />
                 </div>
               )}
             </button>
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Navigation Dropdown Panel */}
         <div
-          className="lg:hidden grid transition-[grid-template-rows] duration-300 ease-in-out"
-          style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+          data-no-shockwave="true"
+          className="lg:hidden overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out border-t border-cyan-500/20"
+          style={{
+            maxHeight: open ? "560px" : "0px",
+            opacity: open ? 1 : 0,
+            pointerEvents: open ? "auto" : "none",
+          }}
         >
-          <div className="overflow-hidden">
-            <div
-              className="px-5 py-4 space-y-2 border-t"
-              style={{
-                borderTopColor: tint("border", 0.5),
-                background: solid("bg"),
-              }}
-            >
-              <div className="grid grid-cols-2 gap-2 pb-3">
-                {navLinks.map((link) => {
-                  const isActive = location.pathname === link.to
-                  return (
-                    <NavLink
-                      key={link.to}
-                      to={link.to}
-                      onClick={() => setOpen(false)}
-                      className="px-3 py-2.5 rounded-lg text-xs font-sans-ui uppercase tracking-wider font-semibold text-center transition-colors"
-                      style={{
-                        background: isActive ? navySolid : solid("bgWarm"),
-                        color: isActive ? "#ffffff" : solid("ink"),
-                        border: `1px solid ${tint("border", 0.5)}`,
-                      }}
-                    >
-                      {link.label}
-                    </NavLink>
-                  )
-                })}
-              </div>
+          <div className="px-5 py-5 space-y-3 rounded-b-2xl bg-slate-950/95 backdrop-blur-2xl">
+            <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-slate-400 font-semibold px-2">
+              Navigation Menu
+            </div>
 
-              <div className="pt-2 border-t flex flex-col gap-2" style={{ borderTopColor: tint("border", 0.5) }}>
-                <Link
-                  to="/membership"
-                  onClick={() => setOpen(false)}
-                  className="w-full py-2.5 rounded-lg text-center font-sans-ui text-xs uppercase tracking-wider font-semibold text-white"
-                  style={{ background: navySolid }}
-                >
-                  Join Chapter
-                </Link>
-              </div>
+            <nav className="flex flex-col space-y-1.5" aria-label="Mobile Navigation">
+              {mobileNavLinks.map((link) => {
+                const isActive = location.pathname === link.to
+                const IconComponent = link.icon
+                return (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    data-no-shockwave="true"
+                    onClick={handleLinkClick}
+                    className={`px-4 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold flex items-center justify-between transition-all duration-200 ${
+                      isActive
+                        ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-300 border-l-2 border-cyan-400 font-bold shadow-sm shadow-cyan-500/10"
+                        : "text-slate-300 hover:text-white hover:bg-white/5 active:bg-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <IconComponent
+                        size={16}
+                        className={isActive ? "text-cyan-400" : "text-slate-500"}
+                      />
+                      <span>{link.label}</span>
+                    </div>
+
+                    {isActive ? (
+                      <span className="flex items-center gap-1.5 text-[10px] font-mono font-medium text-cyan-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                        ACTIVE
+                      </span>
+                    ) : (
+                      <span className="text-slate-600 text-xs">→</span>
+                    )}
+                  </NavLink>
+                )
+              })}
+            </nav>
+
+            {/* Mobile Action Footer */}
+            <div className="pt-3 border-t border-slate-800/80">
+              <Link
+                to="/membership"
+                data-no-shockwave="true"
+                onClick={handleLinkClick}
+                className="w-full py-3 rounded-xl text-center font-sans-ui text-xs uppercase tracking-wider font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-sky-400 hover:opacity-95 shadow-md shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
+              >
+                <span>Join Chapter</span>
+                <span className="text-slate-900 font-bold">↗</span>
+              </Link>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Backdrop */}
+      {open && (
+        <div
+          data-no-shockwave="true"
+          className="fixed inset-0 top-[72px] z-40 bg-black/65 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+          onClick={handleBackdropClick}
+          aria-hidden="true"
+        />
+      )}
 
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
