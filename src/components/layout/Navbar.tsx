@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Link, NavLink, useLocation } from "react-router-dom"
 import { navLinks } from "@/data/ssit"
 import { ThemeToggle } from "@/components/ui/ThemeToggle"
+import { SoundToggle } from "@/components/ui/SoundToggle"
 import { solid, tint, navySolid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useAnnouncements } from "@/firebase/firestore"
@@ -129,6 +130,7 @@ export function Navbar() {
               <Icons.Search size={15} />
             </button>
 
+            <SoundToggle />
             <ThemeToggle />
 
             {/* Join CTA */}

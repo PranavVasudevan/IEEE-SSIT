@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react"
 import { useTheme } from "@/context/ThemeContext"
+import { playShockwaveSound } from "@/utils/soundEffects"
 
 interface Node {
   x: number
@@ -127,6 +128,8 @@ export function InteractiveBackground() {
       if (shockwaves.length >= 8) {
         shockwaves.shift()
       }
+
+      playShockwaveSound(isGold)
 
       shockwaves.push({
         id: nextShockwaveId++,
