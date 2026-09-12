@@ -17,6 +17,19 @@ interface Node {
   energyPulse: number
 }
 
+interface GlobeVertex {
+  lat: number
+  lon: number
+  x: number
+  y: number
+  z: number
+  screenX: number
+  screenY: number
+  projScale: number
+  depthAlpha: number
+  energy: number
+}
+
 interface Shockwave {
   id: number
   x: number
@@ -55,6 +68,43 @@ export function InteractiveBackground() {
     let width = (canvas.width = window.innerWidth)
     let height = (canvas.height = window.innerHeight)
     let dpr = Math.min(window.devicePixelRatio || 1, 2)
+    let scrollY = window.scrollY || 0
+
+    const onScroll = () => {
+      scrollY = window.scrollY || 0
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+
+    // Generate 3D Geodesic SSIT Globe Vertices
+    const numLat = 9
+    const numLon = 14
+    let globeVertices: GlobeVertex[] = []
+
+    const buildGlobe = () => {
+      globeVertices = []
+      for (let i = 1; i < numLat; i++) {
+        const lat = (Math.PI * i) / numLat - Math.PI / 2
+        for (let j = 0; j < numLon; j++) {
+          const lon = (2 * Math.PI * j) / numLon
+          globeVertices.push({
+            lat,
+            lon,
+            x: 0,
+            y: 0,
+            z: 0,
+            screenX: 0,
+            screenY: 0,
+            projScale: 1,
+            depthAlpha: 1,
+            energy: 0,
+          })
+        }
+      }
+    }
+    buildGlobe()
+
+    let globeYaw = 0.4
+    const globePitch = 0.28
 
     const resize = () => {
       width = window.innerWidth
@@ -73,8 +123,7 @@ export function InteractiveBackground() {
 
     const getTargetNodeCount = () => {
       const area = width * height
-      // Mobile gets ~28-35 nodes, desktop gets ~55-75 nodes
-      return Math.min(Math.max(Math.floor(area / 24000), 28), 75)
+      return Math.min(Math.max(Math.floor(area / 28000), 24), 60)
     }
 
     const reinitNodes = () => {
@@ -94,13 +143,13 @@ export function InteractiveBackground() {
       return {
         x: Math.random() * w,
         y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        radius: 1.1 + Math.random() * 1.5,
-        baseAlpha: 0.3 + Math.random() * 0.45,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        radius: 1.0 + Math.random() * 1.5,
+        baseAlpha: 0.25 + Math.random() * 0.4,
         phase: Math.random() * Math.PI * 2,
         pulseSpeed: 0.012 + Math.random() * 0.018,
-        isAccent: Math.random() < 0.15, // IEEE SSIT Amber accent nodes
+        isAccent: Math.random() < 0.16,
         dispX: 0,
         dispY: 0,
         energyPulse: 0,
@@ -113,17 +162,16 @@ export function InteractiveBackground() {
     ctx.scale(dpr, dpr)
     reinitNodes()
 
-    // Global pointer down listener (mouse, pen, touch)
+    // Global pointer down listener (mouse, touch, pen)
     const handlePointerDown = (e: PointerEvent) => {
-      // Don't create shockwave if clicking inside devtools or invalid coords
       if (e.clientX < 0 || e.clientY < 0) return
 
       const isMobile = width < 768
       const maxRadius = isMobile
-        ? Math.min(width * 0.45, 200)
-        : Math.min(Math.max(width * 0.24, 180), 320)
+        ? Math.min(width * 0.5, 220)
+        : Math.min(Math.max(width * 0.26, 200), 360)
 
-      const isGold = Math.random() < 0.22 // ~22% shockwaves carry golden/amber warmth
+      const isGold = Math.random() < 0.25
 
       if (shockwaves.length >= 8) {
         shockwaves.shift()
@@ -137,9 +185,9 @@ export function InteractiveBackground() {
         y: e.clientY,
         radius: 4,
         maxRadius,
-        speed: isMobile ? 3.8 : 4.4,
+        speed: isMobile ? 4.2 : 5.0,
         life: 1.0,
-        decay: isMobile ? 0.022 : 0.018,
+        decay: isMobile ? 0.02 : 0.016,
         isGold,
       })
     }
@@ -166,45 +214,191 @@ export function InteractiveBackground() {
       if (!isVisible) return
 
       const isDark = themeRef.current === "dark"
-      const maxConnectionDist = width < 768 ? 100 : 135
-      const maxDistSq = maxConnectionDist * maxConnectionDist
 
-      // 1. Draw ambient gradient background
+      // 1. Base Atmospheric Nebula Gradient
       if (isDark) {
         const bgGrad = ctx.createRadialGradient(
-          width * 0.32,
-          height * 0.22,
-          40,
+          width * 0.65,
+          height * 0.35 - scrollY * 0.2,
+          50,
           width * 0.5,
           height * 0.5,
-          Math.max(width, height) * 0.88
+          Math.max(width, height) * 0.95
         )
-        bgGrad.addColorStop(0, "#0e1828") // subtle midnight slate cyan glow
-        bgGrad.addColorStop(0.55, "#090d16") // deep IEEE slate
-        bgGrad.addColorStop(1, "#060910") // deep obsidian edge
+        bgGrad.addColorStop(0, "#0b1528") // Electric midnight cyan core
+        bgGrad.addColorStop(0.35, "#070e1c") // Deep navy slate
+        bgGrad.addColorStop(0.7, "#050913") // Obsidian space
+        bgGrad.addColorStop(1, "#03050a") // Pure void edge
         ctx.fillStyle = bgGrad
       } else {
         const bgGrad = ctx.createRadialGradient(
-          width * 0.35,
-          height * 0.25,
-          40,
+          width * 0.65,
+          height * 0.35,
+          50,
           width * 0.5,
           height * 0.5,
-          Math.max(width, height) * 0.85
+          Math.max(width, height) * 0.9
         )
         bgGrad.addColorStop(0, "#f9f8f4")
-        bgGrad.addColorStop(0.65, "#f4f1e9")
+        bgGrad.addColorStop(0.65, "#f3f0e8")
         bgGrad.addColorStop(1, "#eae6dd")
         ctx.fillStyle = bgGrad
       }
       ctx.fillRect(0, 0, width, height)
 
-      // 2. Update and propagate shockwaves
+      // 2. Technical Coordinate Watermarks
+      if (isDark && width > 768) {
+        ctx.save()
+        ctx.font = "10px monospace"
+        ctx.fillStyle = "rgba(56, 189, 248, 0.12)"
+        ctx.fillText("LAT 12.75°N // LON 80.20°E [SSN CE]", 32, 95)
+        ctx.fillText("IEEE SSIT // EST. 1972 // SOCIETY ON SOCIAL IMPLICATIONS OF TECH", 32, height - 32)
+        ctx.restore()
+      }
+
+      // 3. Mathematical 3D Geodesic SSIT Wireframe Globe
+      const isMobile = width < 768
+      const globeRadius = Math.min(width, height) * (isMobile ? 0.42 : 0.48)
+      const globeCx = width * (isMobile ? 0.5 : 0.72)
+      const globeCy = height * (isMobile ? 0.32 : 0.42) - scrollY * 0.22
+
+      if (!prefersReducedMotion) {
+        globeYaw += 0.0016
+      }
+
+      // 3a. Volumetric Globe Radial Glow
+      if (isDark) {
+        const glow = ctx.createRadialGradient(
+          globeCx,
+          globeCy,
+          10,
+          globeCx,
+          globeCy,
+          globeRadius * 1.3
+        )
+        glow.addColorStop(0, "rgba(56, 189, 248, 0.12)")
+        glow.addColorStop(0.4, "rgba(14, 165, 233, 0.05)")
+        glow.addColorStop(0.8, "rgba(245, 158, 11, 0.02)")
+        glow.addColorStop(1, "rgba(0, 0, 0, 0)")
+        ctx.fillStyle = glow
+        ctx.beginPath()
+        ctx.arc(globeCx, globeCy, globeRadius * 1.3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // 3b. Transform 3D Vertices
+      const fov = 650
+      const cosPitch = Math.cos(globePitch)
+      const sinPitch = Math.sin(globePitch)
+      const cosYaw = Math.cos(globeYaw)
+      const sinYaw = Math.sin(globeYaw)
+
+      for (let i = 0; i < globeVertices.length; i++) {
+        const v = globeVertices[i]
+        // Base spherical coordinates
+        const x0 = globeRadius * Math.cos(v.lat) * Math.sin(v.lon)
+        const y0 = globeRadius * Math.sin(v.lat)
+        const z0 = globeRadius * Math.cos(v.lat) * Math.cos(v.lon)
+
+        // Rotate around Y axis (Yaw)
+        const x1 = x0 * cosYaw - z0 * sinYaw
+        const z1 = x0 * sinYaw + z0 * cosYaw
+
+        // Rotate around X axis (Pitch)
+        const y2 = y0 * cosPitch - z1 * sinPitch
+        const z2 = y0 * sinPitch + z1 * cosPitch
+
+        v.x = x1
+        v.y = y2
+        v.z = z2
+
+        // Perspective projection
+        const scale = fov / (fov + z2)
+        v.screenX = globeCx + x1 * scale
+        v.screenY = globeCy + y2 * scale
+        v.projScale = scale
+
+        // Depth cue: front vertices are bright, back are soft
+        const normZ = z2 / globeRadius // -1 to 1
+        v.depthAlpha = normZ > 0 ? 0.25 + normZ * 0.45 : Math.max(0.04, 0.25 + normZ * 0.2)
+
+        // Damped energy pulse recovery
+        v.energy *= 0.94
+      }
+
+      // 3c. Draw Globe Latitude Rings
+      ctx.lineWidth = 0.9
+      for (let i = 1; i < numLat; i++) {
+        const startIndex = (i - 1) * numLon
+        ctx.beginPath()
+        for (let j = 0; j <= numLon; j++) {
+          const idx = startIndex + (j % numLon)
+          const pt = globeVertices[idx]
+          if (j === 0) ctx.moveTo(pt.screenX, pt.screenY)
+          else ctx.lineTo(pt.screenX, pt.screenY)
+        }
+        if (isDark) {
+          ctx.strokeStyle = `rgba(56, 189, 248, 0.14)`
+        } else {
+          ctx.strokeStyle = `rgba(40, 75, 120, 0.12)`
+        }
+        ctx.stroke()
+      }
+
+      // 3d. Draw Globe Longitude Meridians
+      for (let j = 0; j < numLon; j++) {
+        ctx.beginPath()
+        for (let i = 1; i < numLat; i++) {
+          const idx = (i - 1) * numLon + j
+          const pt = globeVertices[idx]
+          if (i === 1) ctx.moveTo(pt.screenX, pt.screenY)
+          else ctx.lineTo(pt.screenX, pt.screenY)
+        }
+        if (isDark) {
+          ctx.strokeStyle = `rgba(125, 185, 245, 0.12)`
+        } else {
+          ctx.strokeStyle = `rgba(40, 75, 120, 0.1)`
+        }
+        ctx.stroke()
+      }
+
+      // 3e. Draw Globe Vertices (Nodes) with Energy Glow
+      for (let i = 0; i < globeVertices.length; i++) {
+        const v = globeVertices[i]
+        // Only render vertices on the visible half or faint on rear
+        if (v.z > -globeRadius * 0.35) {
+          const totalAlpha = Math.min(1.0, v.depthAlpha + v.energy * 0.6)
+          const nodeRad = (v.z > 0 ? 1.6 : 1.1) * v.projScale + v.energy * 2.0
+
+          if (v.energy > 0.1) {
+            ctx.beginPath()
+            ctx.arc(v.screenX, v.screenY, nodeRad * 3.2, 0, Math.PI * 2)
+            ctx.fillStyle = isDark
+              ? `rgba(56, 189, 248, ${v.energy * 0.3})`
+              : `rgba(40, 75, 120, ${v.energy * 0.2})`
+            ctx.fill()
+          }
+
+          ctx.beginPath()
+          ctx.arc(v.screenX, v.screenY, nodeRad, 0, Math.PI * 2)
+          if (isDark) {
+            ctx.fillStyle =
+              v.energy > 0.2
+                ? `rgba(245, 158, 11, ${totalAlpha})`
+                : `rgba(56, 189, 248, ${totalAlpha})`
+          } else {
+            ctx.fillStyle = `rgba(30, 58, 138, ${totalAlpha})`
+          }
+          ctx.fill()
+        }
+      }
+
+      // 4. Update and Propagate Interactive Shockwaves
       for (let sIdx = shockwaves.length - 1; sIdx >= 0; sIdx--) {
         const wave = shockwaves[sIdx]
         if (!prefersReducedMotion) {
           wave.radius += wave.speed
-          wave.speed *= 0.988 // subtle fluid deceleration
+          wave.speed *= 0.988
           wave.life -= wave.decay
         } else {
           wave.life -= 0.04
@@ -215,76 +409,53 @@ export function InteractiveBackground() {
           continue
         }
 
-        // Draw shockwave energy rings
         const ringAlpha = Math.max(0, wave.life)
-        const crestWidth = Math.max(1, 2.5 * (1 - wave.radius / wave.maxRadius))
+        const crestWidth = Math.max(1, 2.8 * (1 - wave.radius / wave.maxRadius))
 
-        // Outer wave crest
+        // Main Wave Crest
         ctx.beginPath()
         ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2)
         ctx.lineWidth = crestWidth
         if (isDark) {
           ctx.strokeStyle = wave.isGold
-            ? `rgba(245, 158, 11, ${0.45 * ringAlpha})`
-            : `rgba(56, 189, 248, ${0.42 * ringAlpha})`
+            ? `rgba(245, 158, 11, ${0.48 * ringAlpha})`
+            : `rgba(56, 189, 248, ${0.45 * ringAlpha})`
         } else {
           ctx.strokeStyle = wave.isGold
-            ? `rgba(178, 93, 66, ${0.35 * ringAlpha})`
-            : `rgba(40, 75, 120, ${0.32 * ringAlpha})`
+            ? `rgba(178, 93, 66, ${0.38 * ringAlpha})`
+            : `rgba(40, 75, 120, ${0.35 * ringAlpha})`
         }
         ctx.stroke()
 
-        // Inner harmonic echo ring
-        if (wave.radius > 20) {
+        // Harmonic Echo Ring
+        if (wave.radius > 24) {
           ctx.beginPath()
-          ctx.arc(wave.x, wave.y, wave.radius * 0.9, 0, Math.PI * 2)
+          ctx.arc(wave.x, wave.y, wave.radius * 0.88, 0, Math.PI * 2)
           ctx.lineWidth = 1
           if (isDark) {
             ctx.strokeStyle = wave.isGold
-              ? `rgba(245, 158, 11, ${0.18 * ringAlpha})`
-              : `rgba(56, 189, 248, ${0.16 * ringAlpha})`
+              ? `rgba(245, 158, 11, ${0.2 * ringAlpha})`
+              : `rgba(56, 189, 248, ${0.18 * ringAlpha})`
           } else {
-            ctx.strokeStyle = wave.isGold
-              ? `rgba(178, 93, 66, ${0.14 * ringAlpha})`
-              : `rgba(40, 75, 120, ${0.12 * ringAlpha})`
+            ctx.strokeStyle = `rgba(40, 75, 120, ${0.15 * ringAlpha})`
           }
           ctx.stroke()
         }
 
-        // Faint radial energy bloom
-        if (wave.radius > 10) {
-          const bloom = ctx.createRadialGradient(
-            wave.x,
-            wave.y,
-            Math.max(0, wave.radius * 0.7),
-            wave.x,
-            wave.y,
-            wave.radius
-          )
-          if (isDark) {
-            bloom.addColorStop(0, "rgba(56, 189, 248, 0)")
-            bloom.addColorStop(
-              1,
-              wave.isGold
-                ? `rgba(245, 158, 11, ${0.08 * ringAlpha})`
-                : `rgba(56, 189, 248, ${0.07 * ringAlpha})`
-            )
-          } else {
-            bloom.addColorStop(0, "rgba(40, 75, 120, 0)")
-            bloom.addColorStop(
-              1,
-              wave.isGold
-                ? `rgba(178, 93, 66, ${0.05 * ringAlpha})`
-                : `rgba(40, 75, 120, ${0.05 * ringAlpha})`
-            )
+        // Energy Transfer to 3D Globe Vertices
+        for (let i = 0; i < globeVertices.length; i++) {
+          const gv = globeVertices[i]
+          const dx = gv.screenX - wave.x
+          const dy = gv.screenY - wave.y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          const diff = Math.abs(dist - wave.radius)
+          if (diff < 32) {
+            const push = (1 - diff / 32) * wave.life
+            gv.energy = Math.min(1.0, gv.energy + push * 0.8)
           }
-          ctx.fillStyle = bloom
-          ctx.beginPath()
-          ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2)
-          ctx.fill()
         }
 
-        // Energy transfer to nearby nodes as wave crest touches them
+        // Energy Transfer to Constellation Nodes
         if (!prefersReducedMotion) {
           for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i]
@@ -293,43 +464,43 @@ export function InteractiveBackground() {
             const dist = Math.sqrt(dx * dx + dy * dy)
             const diff = Math.abs(dist - wave.radius)
 
-            if (diff < 26) {
-              const pushFactor = (1 - diff / 26) * (1 - wave.radius / wave.maxRadius) * wave.life
+            if (diff < 28) {
+              const pushFactor = (1 - diff / 28) * (1 - wave.radius / wave.maxRadius) * wave.life
               const angle = Math.atan2(dy, dx)
-              const impulse = pushFactor * 2.6
+              const impulse = pushFactor * 2.8
               node.dispX += Math.cos(angle) * impulse
               node.dispY += Math.sin(angle) * impulse
-              node.energyPulse = Math.min(1.0, node.energyPulse + pushFactor * 0.75)
+              node.energyPulse = Math.min(1.0, node.energyPulse + pushFactor * 0.8)
             }
           }
         }
       }
 
-      // 3. Update nodes
+      // 5. Update Constellation Nodes
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i]
-
         if (!prefersReducedMotion) {
           node.x += node.vx
           node.y += node.vy
           node.phase += node.pulseSpeed
 
-          // Gentle bounce at borders with soft margin
-          const pad = 20
+          const pad = 24
           if (node.x < -pad) node.x = width + pad
           else if (node.x > width + pad) node.x = -pad
           if (node.y < -pad) node.y = height + pad
           else if (node.y > height + pad) node.y = -pad
 
-          // Spring damping of shockwave displacement
           node.dispX *= 0.92
           node.dispY *= 0.92
           node.energyPulse *= 0.94
         }
       }
 
-      // 4. Draw network connection filaments
+      // 6. Draw Constellation Connection Filaments
+      const maxConnDist = isMobile ? 95 : 130
+      const maxConnDistSq = maxConnDist * maxConnDist
       ctx.lineWidth = 0.8
+
       for (let i = 0; i < nodes.length; i++) {
         const n1 = nodes[i]
         const p1x = n1.x + n1.dispX
@@ -344,38 +515,26 @@ export function InteractiveBackground() {
           const dy = p2y - p1y
           const distSq = dx * dx + dy * dy
 
-          if (distSq < maxDistSq) {
+          if (distSq < maxConnDistSq) {
             const dist = Math.sqrt(distSq)
-            const proximity = 1 - dist / maxConnectionDist
+            const proximity = 1 - dist / maxConnDist
             const energyGlow = Math.max(n1.energyPulse, n2.energyPulse)
-            const isAccentConn = n1.isAccent || n2.isAccent
+            const isAccent = n1.isAccent || n2.isAccent
 
-            let lineAlpha: number
-            if (isDark) {
-              lineAlpha = proximity * (0.13 + energyGlow * 0.45)
-            } else {
-              lineAlpha = proximity * (0.09 + energyGlow * 0.3)
-            }
+            let lineAlpha = isDark
+              ? proximity * (0.12 + energyGlow * 0.4)
+              : proximity * (0.08 + energyGlow * 0.3)
 
             if (lineAlpha > 0.01) {
               ctx.beginPath()
               ctx.moveTo(p1x, p1y)
               ctx.lineTo(p2x, p2y)
-
               if (isDark) {
-                if (isAccentConn) {
-                  ctx.strokeStyle = `rgba(245, 158, 11, ${lineAlpha})`
-                } else if (energyGlow > 0.2) {
-                  ctx.strokeStyle = `rgba(56, 189, 248, ${lineAlpha * 1.3})`
-                } else {
-                  ctx.strokeStyle = `rgba(125, 175, 230, ${lineAlpha})`
-                }
+                ctx.strokeStyle = isAccent
+                  ? `rgba(245, 158, 11, ${lineAlpha})`
+                  : `rgba(56, 189, 248, ${lineAlpha})`
               } else {
-                if (isAccentConn) {
-                  ctx.strokeStyle = `rgba(178, 93, 66, ${lineAlpha})`
-                } else {
-                  ctx.strokeStyle = `rgba(40, 60, 90, ${lineAlpha})`
-                }
+                ctx.strokeStyle = `rgba(40, 75, 120, ${lineAlpha})`
               }
               ctx.stroke()
             }
@@ -383,49 +542,33 @@ export function InteractiveBackground() {
         }
       }
 
-      // 5. Draw nodes (particles)
+      // 7. Draw Constellation Nodes
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i]
         const px = node.x + node.dispX
         const py = node.y + node.dispY
 
-        const pulse = Math.sin(node.phase) * 0.25 + 0.75 // 0.5 to 1.0 breathing
+        const pulse = Math.sin(node.phase) * 0.25 + 0.75
         const alpha = Math.min(1.0, node.baseAlpha * pulse + node.energyPulse * 0.6)
         const rad = node.radius + node.energyPulse * 1.2
 
-        // Outer glow on energy pulse
         if (node.energyPulse > 0.15) {
           ctx.beginPath()
           ctx.arc(px, py, rad * 3, 0, Math.PI * 2)
-          if (isDark) {
-            ctx.fillStyle = node.isAccent
-              ? `rgba(245, 158, 11, ${node.energyPulse * 0.2})`
-              : `rgba(56, 189, 248, ${node.energyPulse * 0.22})`
-          } else {
-            ctx.fillStyle = node.isAccent
-              ? `rgba(178, 93, 66, ${node.energyPulse * 0.15})`
-              : `rgba(40, 75, 120, ${node.energyPulse * 0.15})`
-          }
+          ctx.fillStyle = node.isAccent
+            ? `rgba(245, 158, 11, ${node.energyPulse * 0.22})`
+            : `rgba(56, 189, 248, ${node.energyPulse * 0.25})`
           ctx.fill()
         }
 
-        // Central node core
         ctx.beginPath()
         ctx.arc(px, py, rad, 0, Math.PI * 2)
         if (isDark) {
-          if (node.isAccent) {
-            ctx.fillStyle = `rgba(245, 158, 11, ${alpha})`
-          } else if (node.energyPulse > 0.2) {
-            ctx.fillStyle = `rgba(125, 211, 252, ${alpha})`
-          } else {
-            ctx.fillStyle = `rgba(148, 195, 245, ${alpha})`
-          }
+          ctx.fillStyle = node.isAccent
+            ? `rgba(245, 158, 11, ${alpha})`
+            : `rgba(125, 211, 252, ${alpha})`
         } else {
-          if (node.isAccent) {
-            ctx.fillStyle = `rgba(178, 93, 66, ${alpha})`
-          } else {
-            ctx.fillStyle = `rgba(35, 55, 80, ${alpha})`
-          }
+          ctx.fillStyle = `rgba(35, 55, 80, ${alpha})`
         }
         ctx.fill()
       }
@@ -439,6 +582,7 @@ export function InteractiveBackground() {
       cancelAnimationFrame(animationFrameId)
       window.removeEventListener("pointerdown", handlePointerDown)
       window.removeEventListener("resize", handleResize)
+      window.removeEventListener("scroll", onScroll)
       document.removeEventListener("visibilitychange", handleVisibilityChange)
       motionQuery.removeEventListener("change", onMotionChange)
       clearTimeout(resizeTimeout)

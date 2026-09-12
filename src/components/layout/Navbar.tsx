@@ -62,12 +62,13 @@ export function Navbar() {
 
       {/* Main Bar */}
       <div
-        className="rounded-b-2xl"
+        className="rounded-b-2xl transition-all duration-300"
         style={{
-          background: "rgba(var(--c-bg-rgb), 0.92)",
-          backdropFilter: "blur(18px)",
-          borderBottom: `1px solid ${tint("border", 0.7)}`,
-          boxShadow: `0 4px 20px ${tint("black", 0.04)}`,
+          background: "rgba(var(--c-bg-rgb), 0.88)",
+          backdropFilter: "blur(24px) saturate(180%)",
+          WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          borderBottom: `1px solid rgba(56, 189, 248, 0.18)`,
+          boxShadow: `0 8px 32px -4px rgba(0, 0, 0, 0.35)`,
         }}
       >
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 h-[72px] flex items-center justify-between gap-4">
