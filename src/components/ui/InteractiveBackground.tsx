@@ -186,7 +186,7 @@ export function InteractiveBackground() {
       if (e.clientX < 0 || e.clientY < 0) return
 
       const target = e.target as HTMLElement | null
-      if (target && target.closest("[data-no-shockwave='true']")) {
+      if (target && (target.closest("[data-no-shockwave='true']") || target.closest("[data-nav-tab='true']"))) {
         return
       }
 

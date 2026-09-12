@@ -1681,7 +1681,18 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
-                  {["all", "Office Bearers", "Web Development", "Executive", "Events", "Design & Media", "Editorial"].map((type) => (
+                  {[
+                    "all",
+                    "Office Bearers",
+                    "Web Development",
+                    "Event Management",
+                    "Design",
+                    "Documentation",
+                    "Logistics",
+                    "Marketing Outreach",
+                    "Photography",
+                    "Other",
+                  ].map((type) => (
                     <button
                       key={type}
                       onClick={() => setTeamTypeFilter(type)}
@@ -2873,10 +2884,13 @@ export default function AdminDashboard() {
                   >
                     <option value="Office Bearers">Office Bearers</option>
                     <option value="Web Development">Web Development</option>
+                    <option value="Event Management">Event Management</option>
+                    <option value="Design">Design</option>
+                    <option value="Documentation">Documentation</option>
+                    <option value="Logistics">Logistics</option>
+                    <option value="Marketing Outreach">Marketing Outreach</option>
+                    <option value="Photography">Photography</option>
                     <option value="Executive">Executive</option>
-                    <option value="Events">Events</option>
-                    <option value="Design & Media">Design & Media</option>
-                    <option value="Editorial">Editorial</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>

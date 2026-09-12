@@ -7,6 +7,7 @@ import { useTeam, useChapterInfo } from "@/firebase/firestore"
 import { useDocumentTitle } from "@/hooks/useDocumentTitle"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { PersonCardSkeletonGrid } from "@/components/ui/Skeleton"
+import { CHAPTER_VERTICALS } from "@/data/teamData"
 
 function getMemberInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -22,14 +23,9 @@ export default function About() {
   const { team, loading: teamLoading } = useTeam()
   const { chapterInfo } = useChapterInfo()
 
-  const officeBearers = team
-    .filter(m => (m.teamType === "Office Bearers" || m.teamType === "Executive") && (m.active !== false))
-    .sort((a, b) => (a.order || 0) - (b.order || 0))
-  const webDevMembers = team
-    .filter(m => m.teamType === "Web Development" && (m.active !== false))
-    .sort((a, b) => (a.order || 0) - (b.order || 0))
+  const verticalIds = new Set(CHAPTER_VERTICALS.map(v => v.id))
   const otherMembers = team
-    .filter(m => m.teamType !== "Office Bearers" && m.teamType !== "Executive" && m.teamType !== "Web Development" && (m.active !== false))
+    .filter(m => !verticalIds.has(m.teamType as any) && m.teamType !== "Executive" && m.active !== false)
     .sort((a, b) => (a.order || 0) - (b.order || 0))
 
   return (
@@ -241,243 +237,228 @@ export default function About() {
           </div>
         )}
 
-        {/* Tab 4: SSN Student Chapter Team & Web Dev Team */}
+        {/* Tab 4: SSN Student Chapter Team & All 8 Verticals */}
         {activeTab === "team" && (
           <div className="space-y-12">
-            {/* 1. Office Bearers */}
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2.5">
-                    <h2 className="font-display text-2xl md:text-3xl font-bold" style={{ color: solid("ink") }}>
-                      Student Chapter Office Bearers
-                    </h2>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-sans-ui font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40">
-                      {officeBearers.length} Office Bearers
+            {/* Chapter Leadership & Team Group Photo Banner */}
+            <div className="relative rounded-3xl overflow-hidden border border-slate-700/60 shadow-2xl group bg-slate-950">
+              <div className="relative h-64 sm:h-80 md:h-96 w-full overflow-hidden">
+                <img
+                  src="/ssit-group-photo.jpg"
+                  alt="IEEE SSIT SSN Student Branch Chapter Team 2026"
+                  className="w-full h-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-sans-ui font-bold bg-amber-400 text-slate-950 uppercase tracking-wider shadow-md">
+                      Official Chapter Leadership
+                    </span>
+                    <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                      Academic Year 2025–2026
                     </span>
                   </div>
-                  <p className="font-sans-ui text-xs md:text-sm pt-1" style={{ color: solid("muted") }}>
-                    SSN College of Engineering Student Branch Chapter Leadership — 2026
+                  <h2 className="font-display text-2xl md:text-3xl font-bold text-white tracking-tight">
+                    IEEE SSIT SSN Student Branch Chapter
+                  </h2>
+                  <p className="font-sans-ui text-xs md:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                    Stewarding technological ethics, human-centric innovation, and student engineering leadership at SSN College of Engineering across all 8 dedicated society verticals.
                   </p>
                 </div>
               </div>
-
-              {teamLoading ? (
-                <PersonCardSkeletonGrid count={3} />
-              ) : officeBearers.length === 0 ? (
-                <EmptyState icon={Icons.Users} title="Office Bearers roster coming soon" />
-              ) : (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {officeBearers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm group hover:border-amber-500/50 hover:shadow-md transition-all"
-                      style={{ background: solid("bgWarm"), borderColor: tint("border", 0.7) }}
-                    >
-                      <div className="space-y-3.5">
-                        <div className="flex items-start gap-4">
-                          {member.photo && member.photo.trim() !== "" ? (
-                            <img
-                              src={member.photo}
-                              alt={member.name}
-                              className="w-16 h-16 rounded-2xl object-cover shrink-0 border border-amber-500/30 shadow-sm"
-                            />
-                          ) : (
-                            <div
-                              className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-lg tracking-wider border shadow-sm transition-transform group-hover:scale-105"
-                              style={{
-                                background: "linear-gradient(135deg, rgba(30, 58, 138, 0.25), rgba(245, 158, 11, 0.2))",
-                                borderColor: "rgba(245, 158, 11, 0.45)",
-                                color: "rgb(217, 119, 6)",
-                              }}
-                            >
-                              {getMemberInitials(member.name)}
-                            </div>
-                          )}
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                                {member.teamType}
-                              </span>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
-                                {member.role}
-                              </span>
-                            </div>
-                            <h3 className="font-display font-bold text-lg truncate" style={{ color: solid("ink") }}>
-                              {member.name}
-                            </h3>
-                            <p className="font-sans-ui text-xs font-medium" style={{ color: solid("muted") }}>
-                              {member.year}
-                            </p>
-                          </div>
-                        </div>
-
-                        {(member.quote || member.bio) && (
-                          <blockquote className="font-display italic text-xs leading-relaxed p-3 rounded-xl border border-amber-500/15 bg-amber-500/5 text-slate-700 dark:text-slate-200">
-                            “{member.quote || member.bio}”
-                          </blockquote>
-                        )}
-                      </div>
-
-                      {member.email && (
-                        <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: tint("border", 0.5) }}>
-                          <span className="font-sans-ui text-[11px] font-mono truncate" style={{ color: solid("navy") }}>
-                            {member.email}
-                          </span>
-                          <a
-                            href={`mailto:${member.email}`}
-                            className="p-1 text-slate-400 hover:text-amber-500 transition-colors"
-                            title={`Email ${member.name}`}
-                          >
-                            <Icons.Mail size={13} />
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* 2. Web Development Team */}
-            <div className="space-y-6 pt-6 border-t" style={{ borderColor: tint("border", 0.6) }}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2.5">
-                    <h2 className="font-display text-2xl md:text-3xl font-bold" style={{ color: solid("ink") }}>
-                      Web Development & Engineering Team
-                    </h2>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-sans-ui font-bold bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/40">
-                      {webDevMembers.length} Core Members
-                    </span>
-                  </div>
-                  <p className="font-sans-ui text-xs md:text-sm pt-1" style={{ color: solid("muted") }}>
-                    Building, maintaining, and architecting the IEEE SSIT SSN Chapter Portal and Content Management System.
-                  </p>
-                </div>
-              </div>
+            {teamLoading ? (
+              <PersonCardSkeletonGrid count={6} />
+            ) : team.length === 0 ? (
+              <EmptyState icon={Icons.Users} title="Chapter team roster coming soon" />
+            ) : (
+              <>
+                {/* Dynamically render each of the 8 chapter verticals */}
+                {CHAPTER_VERTICALS.map((vertical, vIdx) => {
+                  const members = team
+                    .filter(
+                      (m) =>
+                        (m.teamType === vertical.id ||
+                          (vertical.id === "Office Bearers" && m.teamType === "Executive")) &&
+                        m.active !== false
+                    )
+                    .sort((a, b) => (a.order || 0) - (b.order || 0))
 
-              {teamLoading ? (
-                <PersonCardSkeletonGrid count={3} />
-              ) : webDevMembers.length === 0 ? (
-                <EmptyState icon={Icons.Users} title="Web dev team roster coming soon" />
-              ) : (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {webDevMembers.map((member) => (
+                  if (members.length === 0) return null
+
+                  return (
                     <div
-                      key={member.id}
-                      className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm group hover:border-sky-500/50 hover:shadow-md transition-all"
-                      style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
+                      key={vertical.id}
+                      className={`space-y-6 ${vIdx > 0 ? "pt-6 border-t" : ""}`}
+                      style={{ borderColor: tint("border", 0.6) }}
                     >
-                      <div className="space-y-3.5">
-                        <div className="flex items-start gap-4">
-                          {member.photo && member.photo.trim() !== "" ? (
-                            <img
-                              src={member.photo}
-                              alt={member.name}
-                              className="w-16 h-16 rounded-2xl object-cover shrink-0 border border-slate-700 shadow-sm"
-                            />
-                          ) : (
-                            <div
-                              className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-lg tracking-wider border shadow-sm transition-transform group-hover:scale-105"
-                              style={{
-                                background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15))",
-                                borderColor: "rgba(14, 165, 233, 0.35)",
-                                color: "rgb(14, 165, 233)",
-                              }}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2.5">
+                            <h2 className="font-display text-2xl md:text-3xl font-bold" style={{ color: solid("ink") }}>
+                              {vertical.name}
+                            </h2>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-xs font-sans-ui font-bold border ${vertical.badgeColor}`}
                             >
-                              {getMemberInitials(member.name)}
-                            </div>
-                          )}
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
-                                {member.teamType}
-                              </span>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25">
-                                {member.role}
-                              </span>
-                            </div>
-                            <h3 className="font-display font-bold text-lg truncate" style={{ color: solid("ink") }}>
-                              {member.name}
-                            </h3>
-                            <p className="font-sans-ui text-xs font-medium" style={{ color: solid("muted") }}>
-                              {member.year}
-                            </p>
-                          </div>
-                        </div>
-
-                        {(member.quote || member.bio) && (
-                          <blockquote className="font-display italic text-xs leading-relaxed p-3 rounded-xl border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 text-slate-700 dark:text-slate-300">
-                            “{member.quote || member.bio}”
-                          </blockquote>
-                        )}
-                      </div>
-
-                      {member.email && (
-                        <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: tint("border", 0.5) }}>
-                          <span className="font-sans-ui text-[11px] font-mono truncate" style={{ color: solid("navy") }}>
-                            {member.email}
-                          </span>
-                          <a
-                            href={`mailto:${member.email}`}
-                            className="p-1 text-slate-400 hover:text-sky-500 transition-colors"
-                            title={`Email ${member.name}`}
-                          >
-                            <Icons.Mail size={13} />
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 3. Other Members (if any added via CMS in future) */}
-            {otherMembers.length > 0 && (
-              <div className="space-y-6 pt-6 border-t" style={{ borderColor: tint("border", 0.6) }}>
-                <h2 className="font-display text-2xl font-bold" style={{ color: solid("ink") }}>
-                  Additional Chapter Coordinators
-                </h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {otherMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm"
-                      style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
-                    >
-                      <div className="space-y-3.5">
-                        <div className="flex items-start gap-4">
-                          {member.photo && member.photo.trim() !== "" ? (
-                            <img src={member.photo} alt={member.name} className="w-16 h-16 rounded-2xl object-cover shrink-0 border" />
-                          ) : (
-                            <div className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-lg border">
-                              {getMemberInitials(member.name)}
-                            </div>
-                          )}
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-slate-500/15">
-                              {member.role}
+                              {members.length} {members.length === 1 ? "Member" : "Members"}
                             </span>
-                            <h3 className="font-display font-bold text-lg truncate" style={{ color: solid("ink") }}>
-                              {member.name}
-                            </h3>
-                            <p className="font-sans-ui text-xs" style={{ color: solid("muted") }}>
-                              {member.year}
-                            </p>
                           </div>
+                          <p className="font-sans-ui text-xs md:text-sm pt-1" style={{ color: solid("muted") }}>
+                            {vertical.description}
+                          </p>
                         </div>
-                        {(member.quote || member.bio) && (
-                          <blockquote className="font-display italic text-xs leading-relaxed p-3 rounded-xl border border-black/5 dark:border-white/5">
-                            “{member.quote || member.bio}”
-                          </blockquote>
-                        )}
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {members.map((member) => (
+                          <div
+                            key={member.id}
+                            className={`p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm group hover:${vertical.accentBorder} hover:shadow-md transition-all`}
+                            style={{ background: solid("bgWarm"), borderColor: tint("border", 0.7) }}
+                          >
+                            <div className="space-y-3.5">
+                              <div className="flex items-start gap-4">
+                                {member.photo && member.photo.trim() !== "" ? (
+                                  <img
+                                    src={member.photo}
+                                    alt={member.name}
+                                    className="w-16 h-16 rounded-2xl object-cover shrink-0 border border-slate-700 shadow-sm"
+                                  />
+                                ) : (
+                                  <div
+                                    className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-lg tracking-wider border shadow-sm transition-transform group-hover:scale-105"
+                                    style={{
+                                      background:
+                                        vertical.id === "Office Bearers"
+                                          ? "linear-gradient(135deg, rgba(30, 58, 138, 0.25), rgba(245, 158, 11, 0.2))"
+                                          : "linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15))",
+                                      borderColor:
+                                        vertical.id === "Office Bearers"
+                                          ? "rgba(245, 158, 11, 0.45)"
+                                          : "rgba(14, 165, 233, 0.35)",
+                                      color:
+                                        vertical.id === "Office Bearers" ? "rgb(217, 119, 6)" : "rgb(14, 165, 233)",
+                                    }}
+                                  >
+                                    {getMemberInitials(member.name)}
+                                  </div>
+                                )}
+                                <div className="space-y-1 flex-1 min-w-0">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span
+                                      className={`px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider border ${vertical.badgeColor}`}
+                                    >
+                                      {member.teamType}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
+                                      {member.role}
+                                    </span>
+                                  </div>
+                                  <h3 className="font-display font-bold text-lg truncate" style={{ color: solid("ink") }}>
+                                    {member.name}
+                                  </h3>
+                                  <p className="font-sans-ui text-xs font-medium" style={{ color: solid("muted") }}>
+                                    {member.year}
+                                  </p>
+                                  {member.department && (
+                                    <p className="font-sans-ui text-[11px]" style={{ color: solid("muted") }}>
+                                      {member.department}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {(member.quote || member.bio) && (
+                                <blockquote className="font-display italic text-xs leading-relaxed p-3 rounded-xl border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 text-slate-700 dark:text-slate-200">
+                                  “{member.quote || member.bio}”
+                                </blockquote>
+                              )}
+                            </div>
+
+                            {member.email && (
+                              <div
+                                className="pt-3 border-t flex items-center justify-between"
+                                style={{ borderColor: tint("border", 0.5) }}
+                              >
+                                <span
+                                  className="font-sans-ui text-[11px] font-mono truncate"
+                                  style={{ color: solid("navy") }}
+                                >
+                                  {member.email}
+                                </span>
+                                <a
+                                  href={`mailto:${member.email}`}
+                                  className="p-1 text-slate-400 hover:text-amber-500 transition-colors"
+                                  title={`Email ${member.name}`}
+                                >
+                                  <Icons.Mail size={13} />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  )
+                })}
+
+                {/* Additional / Custom Chapter Coordinators if any */}
+                {otherMembers.length > 0 && (
+                  <div className="space-y-6 pt-6 border-t" style={{ borderColor: tint("border", 0.6) }}>
+                    <div className="flex items-center gap-2.5">
+                      <h2 className="font-display text-2xl font-bold" style={{ color: solid("ink") }}>
+                        Additional Chapter Coordinators
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-sans-ui font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">
+                        {otherMembers.length} Members
+                      </span>
+                    </div>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {otherMembers.map((member) => (
+                        <div
+                          key={member.id}
+                          className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm"
+                          style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}
+                        >
+                          <div className="space-y-3.5">
+                            <div className="flex items-start gap-4">
+                              {member.photo && member.photo.trim() !== "" ? (
+                                <img
+                                  src={member.photo}
+                                  alt={member.name}
+                                  className="w-16 h-16 rounded-2xl object-cover shrink-0 border border-slate-700"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-display font-bold text-lg border border-slate-700">
+                                  {getMemberInitials(member.name)}
+                                </div>
+                              )}
+                              <div className="space-y-1 flex-1 min-w-0">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-sans-ui font-bold uppercase tracking-wider bg-slate-500/15">
+                                  {member.role}
+                                </span>
+                                <h3 className="font-display font-bold text-lg truncate" style={{ color: solid("ink") }}>
+                                  {member.name}
+                                </h3>
+                                <p className="font-sans-ui text-xs" style={{ color: solid("muted") }}>
+                                  {member.year}
+                                </p>
+                              </div>
+                            </div>
+                            {(member.quote || member.bio) && (
+                              <blockquote className="font-display italic text-xs leading-relaxed p-3 rounded-xl border border-black/5 dark:border-white/5">
+                                “{member.quote || member.bio}”
+                              </blockquote>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

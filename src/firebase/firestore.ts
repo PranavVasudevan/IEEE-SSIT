@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { DEFAULT_ADMIN_EMAILS, normalizeEmail, isOfficialSSNEmail } from "./adminConfig"
+import { OFFICIAL_CHAPTER_TEAM } from "@/data/teamData"
 import {
   teamApi,
   eventsApi,
@@ -373,9 +374,28 @@ export async function deleteGalleryPhoto(id: string): Promise<boolean> {
 // 5. TEAM DIRECTORY CMS
 // =========================================================================
 
+const LOCAL_TEAM_KEY = "ieee_ssit_team_store"
+
+function getStoredTeam(): TeamMember[] {
+  try {
+    const saved = localStorage.getItem(LOCAL_TEAM_KEY)
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch {}
+  return (OFFICIAL_CHAPTER_TEAM as unknown) as TeamMember[]
+}
+
+function persistStoredTeam(list: TeamMember[]) {
+  try {
+    localStorage.setItem(LOCAL_TEAM_KEY, JSON.stringify(list))
+  } catch {}
+}
+
 export function useTeam() {
-  const [team, setTeam] = useState<TeamMember[]>([])
-  const [loading, setLoading] = useState(true)
+  const [team, setTeam] = useState<TeamMember[]>(() => getStoredTeam())
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -384,16 +404,49 @@ export function useTeam() {
       try {
         const list = await teamApi.getAll()
         if (isMounted) {
-          const normalized = list.map((m) => ({
-            ...m,
-            teamType: (m.team_type || m.teamType || "Office Bearers") as any,
-          }))
-          setTeam(normalized)
+          if (list && list.length > 0) {
+            // Merge existing backend members with OFFICIAL_CHAPTER_TEAM to ensure photo and details are populated
+            const normalized = list.map((m) => {
+              const official = OFFICIAL_CHAPTER_TEAM.find(
+                (o) =>
+                  o.name.trim().toLowerCase() === (m.name || "").trim().toLowerCase() ||
+                  o.id === m.id
+              )
+              return {
+                ...m,
+                teamType: (m.team_type || m.teamType || (official ? official.teamType : "Office Bearers")) as any,
+                photo: m.photo && m.photo.trim() !== "" ? m.photo : official?.photo || "",
+                quote: m.quote || official?.quote || "",
+                bio: m.bio || official?.bio || "",
+                department: m.department || official?.department || "",
+                year: m.year || official?.year || "",
+                email: m.email || official?.email || "",
+                order: m.order !== undefined ? m.order : official?.order ?? 99,
+              }
+            })
+
+            // Check for any official members missing in the backend response (e.g. newly added verticals)
+            const existingNames = new Set(normalized.map((m) => (m.name || "").trim().toLowerCase()))
+            const missingOfficial = ((OFFICIAL_CHAPTER_TEAM as unknown) as TeamMember[]).filter(
+              (o) => !existingNames.has((o.name || "").trim().toLowerCase())
+            )
+
+            const merged = [...normalized, ...missingOfficial].sort(
+              (a, b) => (a.order || 0) - (b.order || 0)
+            )
+            setTeam(merged)
+            persistStoredTeam(merged)
+          } else {
+            setTeam(getStoredTeam())
+          }
           setLoading(false)
         }
       } catch (err) {
-        console.warn("Failed to fetch team from FastAPI:", err)
-        if (isMounted) setLoading(false)
+        console.warn("Failed to fetch team from API, using official roster fallback:", err)
+        if (isMounted) {
+          setTeam(getStoredTeam())
+          setLoading(false)
+        }
       }
     }
 
@@ -412,22 +465,60 @@ export function useTeam() {
 export async function saveTeamMember(member: Omit<TeamMember, "id"> & { id?: string }): Promise<string> {
   const payload = {
     ...member,
-    team_type: member.teamType || member.team_type || "Office Bearers",
+    team_type: (member.teamType || member.team_type || "Office Bearers") as any,
   }
 
-  let res: TeamMember
-  if (member.id && !member.id.startsWith("new-")) {
-    res = await teamApi.update(member.id, payload)
-  } else {
-    res = await teamApi.create(payload)
+  let finalId = member.id || `team-${Date.now()}`
+
+  try {
+    let res: TeamMember
+    if (member.id && !member.id.startsWith("new-") && !member.id.startsWith("team-custom-")) {
+      res = await teamApi.update(member.id, payload)
+    } else {
+      res = await teamApi.create(payload)
+    }
+    if (res && res.id) {
+      finalId = res.id
+    }
+  } catch (err) {
+    console.warn("API save failed, persisting locally in browser cache:", err)
   }
+
+  // Update local storage store
+  const current = getStoredTeam()
+  const memberWithId: TeamMember = {
+    ...payload,
+    id: finalId,
+    teamType: payload.team_type,
+    year: payload.year || "",
+  } as TeamMember
+
+  const existingIdx = current.findIndex((m) => m.id === finalId)
+  let updatedList: TeamMember[]
+  if (existingIdx >= 0) {
+    updatedList = [...current]
+    updatedList[existingIdx] = { ...updatedList[existingIdx], ...memberWithId }
+  } else {
+    updatedList = [...current, memberWithId]
+  }
+  persistStoredTeam(updatedList)
+
   window.dispatchEvent(new Event("team_changed"))
   window.dispatchEvent(new Event("activity_changed"))
-  return res.id
+  return finalId
 }
 
 export async function deleteTeamMember(id: string): Promise<boolean> {
-  await teamApi.delete(id)
+  try {
+    await teamApi.delete(id)
+  } catch (err) {
+    console.warn("API delete failed, removing locally in browser cache:", err)
+  }
+
+  const current = getStoredTeam()
+  const updatedList = current.filter((m) => m.id !== id)
+  persistStoredTeam(updatedList)
+
   window.dispatchEvent(new Event("team_changed"))
   window.dispatchEvent(new Event("activity_changed"))
   return true

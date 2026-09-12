@@ -4,7 +4,21 @@ export interface TeamMember {
   id: string
   name: string
   role: string
-  team_type: "Office Bearers" | "Web Development" | "Executive" | "Events" | "Design & Media" | "Editorial" | "Other"
+  team_type:
+    | "Office Bearers"
+    | "Web Development"
+    | "Event Management"
+    | "Design"
+    | "Documentation"
+    | "Logistics"
+    | "Marketing Outreach"
+    | "Photography"
+    | "Executive"
+    | "Events"
+    | "Design & Media"
+    | "Editorial"
+    | "Other"
+    | (string & {})
   teamType?: string
   department?: string
   year: string
