@@ -5,6 +5,7 @@ import { InteractiveBackground } from "@/components/ui/InteractiveBackground"
 import { Layout } from "@/components/layout/Layout"
 import Home from "@/pages/Home"
 import About from "@/pages/About"
+import Events from "@/pages/Events"
 import Activities from "@/pages/Activities"
 import Membership from "@/pages/Membership"
 import Gallery from "@/pages/Gallery"
@@ -24,6 +25,7 @@ export default function App() {
             <Route element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="about" element={<About />} />
+              <Route path="events" element={<Events />} />
               <Route path="activities" element={<Activities />} />
               <Route path="membership" element={<Membership />} />
               <Route path="gallery" element={<Gallery />} />

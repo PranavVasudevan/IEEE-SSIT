@@ -182,7 +182,7 @@ export default function Home() {
       </section>
 
       {/* 4. Upcoming Chapter Events & Programs */}
-      <section className="px-5 md:px-10 lg:px-12">
+      <section id="events" className="px-5 md:px-10 lg:px-12 scroll-mt-24">
         <div className="max-w-6xl mx-auto space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-slate-800">
             <div>
@@ -192,10 +192,10 @@ export default function Home() {
               </h2>
             </div>
             <Link
-              to="/activities"
+              to="/events"
               className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-cyan-400 hover:text-cyan-300 transition-colors"
             >
-              View All Activities & Calendar →
+              View All Chapter Events →
             </Link>
           </div>
 
@@ -210,14 +210,20 @@ export default function Home() {
                 Upcoming events will be announced shortly
               </h3>
               <p className="font-sans-ui text-xs md:text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
-                Explore our past symposia, conference calendar, and student workshops in the activities portal.
+                Explore our past symposia, conference calendar, and student workshops in the events and activities portal.
               </p>
-              <div className="pt-2">
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                 <Link
-                  to="/activities"
+                  to="/events"
                   className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all shadow-md"
                 >
-                  Explore Chapter Activities →
+                  Explore Chapter Events →
+                </Link>
+                <Link
+                  to="/activities"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-slate-700 bg-slate-800/60 text-slate-300 hover:text-white transition-all"
+                >
+                  Global 2025 Calendar →
                 </Link>
               </div>
             </div>
