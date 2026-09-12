@@ -242,17 +242,17 @@ export default function About() {
           <div className="space-y-12">
             {/* Chapter Leadership & Team Group Photo Banner */}
             <div className="relative rounded-3xl overflow-hidden border border-slate-700/60 shadow-2xl group bg-slate-950">
-              <div className="relative h-64 sm:h-80 md:h-96 w-full overflow-hidden">
+              <div className="relative h-72 sm:h-96 md:h-[500px] lg:h-[560px] w-full overflow-hidden">
                 <img
                   src="/ssit-group-photo.jpg"
-                  alt="IEEE SSIT SSN Student Branch Chapter Team 2026"
-                  className="w-full h-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-700"
+                  alt="IEEE SPS and SSIT Inauguration SSN Student Branches 2026"
+                  className="w-full h-full object-cover object-[center_35%] group-hover:scale-[1.02] transition-transform duration-700"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="px-3 py-1 rounded-full text-xs font-sans-ui font-bold bg-amber-400 text-slate-950 uppercase tracking-wider shadow-md">
-                      Official Chapter Leadership
+                      Official Chapter Inauguration & Leadership
                     </span>
                     <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30">
                       Academic Year 2025–2026
