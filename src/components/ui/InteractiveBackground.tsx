@@ -162,18 +162,43 @@ export function InteractiveBackground() {
     ctx.scale(dpr, dpr)
     reinitNodes()
 
-    // Global pointer down listener (mouse, touch, pen)
+    // Cursor spotlight tracking
+    let cursorX = width * 0.5
+    let cursorY = height * 0.5
+    let targetCursorX = width * 0.5
+    let targetCursorY = height * 0.5
+    let isCursorActive = false
+
+    const handlePointerMove = (e: PointerEvent) => {
+      targetCursorX = e.clientX
+      targetCursorY = e.clientY
+      isCursorActive = true
+    }
+    window.addEventListener("pointermove", handlePointerMove, { passive: true })
+
+    const handlePointerLeave = () => {
+      isCursorActive = false
+    }
+    window.addEventListener("mouseleave", handlePointerLeave)
+
+    // Global pointer down listener (shockwave & sound ONLY on click/tap)
     const handlePointerDown = (e: PointerEvent) => {
       if (e.clientX < 0 || e.clientY < 0) return
 
+      targetCursorX = e.clientX
+      targetCursorY = e.clientY
+      cursorX = e.clientX
+      cursorY = e.clientY
+      isCursorActive = true
+
       const isMobile = width < 768
       const maxRadius = isMobile
-        ? Math.min(width * 0.5, 220)
-        : Math.min(Math.max(width * 0.26, 200), 360)
+        ? Math.min(width * 0.55, 240)
+        : Math.min(Math.max(width * 0.28, 220), 400)
 
       const isGold = Math.random() < 0.25
 
-      if (shockwaves.length >= 8) {
+      if (shockwaves.length >= 6) {
         shockwaves.shift()
       }
 
@@ -183,11 +208,11 @@ export function InteractiveBackground() {
         id: nextShockwaveId++,
         x: e.clientX,
         y: e.clientY,
-        radius: 4,
+        radius: 6,
         maxRadius,
-        speed: isMobile ? 4.2 : 5.0,
+        speed: isMobile ? 4.5 : 5.5,
         life: 1.0,
-        decay: isMobile ? 0.02 : 0.016,
+        decay: isMobile ? 0.022 : 0.018,
         isGold,
       })
     }
@@ -215,55 +240,72 @@ export function InteractiveBackground() {
 
       const isDark = themeRef.current === "dark"
 
+      // Smooth cursor spotlight easing
+      cursorX += (targetCursorX - cursorX) * 0.12
+      cursorY += (targetCursorY - cursorY) * 0.12
+
       // 1. Base Atmospheric Nebula Gradient
       if (isDark) {
         const bgGrad = ctx.createRadialGradient(
-          width * 0.65,
-          height * 0.35 - scrollY * 0.2,
+          width * 0.5,
+          height * 0.4 - scrollY * 0.15,
           50,
           width * 0.5,
           height * 0.5,
           Math.max(width, height) * 0.95
         )
-        bgGrad.addColorStop(0, "#0b1528") // Electric midnight cyan core
-        bgGrad.addColorStop(0.35, "#070e1c") // Deep navy slate
-        bgGrad.addColorStop(0.7, "#050913") // Obsidian space
-        bgGrad.addColorStop(1, "#03050a") // Pure void edge
+        bgGrad.addColorStop(0, "#0a1324") // Deep electric midnight core
+        bgGrad.addColorStop(0.35, "#060c18") // Midnight navy slate
+        bgGrad.addColorStop(0.7, "#040710") // Obsidian space
+        bgGrad.addColorStop(1, "#020307") // Deep void edge
         ctx.fillStyle = bgGrad
       } else {
         const bgGrad = ctx.createRadialGradient(
-          width * 0.65,
-          height * 0.35,
+          width * 0.5,
+          height * 0.4,
           50,
           width * 0.5,
           height * 0.5,
           Math.max(width, height) * 0.9
         )
-        bgGrad.addColorStop(0, "#f9f8f4")
-        bgGrad.addColorStop(0.65, "#f3f0e8")
-        bgGrad.addColorStop(1, "#eae6dd")
+        bgGrad.addColorStop(0, "#fbfaf7")
+        bgGrad.addColorStop(0.6, "#f3f0e8")
+        bgGrad.addColorStop(1, "#eae6dc")
         ctx.fillStyle = bgGrad
       }
       ctx.fillRect(0, 0, width, height)
 
-      // 2. Technical Coordinate Watermarks
-      if (isDark && width > 768) {
+      // 2. Interactive Cursor Spotlight / Torch (smoothly follows pointer movement)
+      if (isCursorActive) {
         ctx.save()
-        ctx.font = "10px monospace"
-        ctx.fillStyle = "rgba(56, 189, 248, 0.12)"
-        ctx.fillText("LAT 12.75°N // LON 80.20°E [SSN CE]", 32, 95)
-        ctx.fillText("IEEE SSIT // EST. 1972 // SOCIETY ON SOCIAL IMPLICATIONS OF TECH", 32, height - 32)
+        const torchRadius = isDark ? 320 : 260
+        const torch = ctx.createRadialGradient(cursorX, cursorY, 0, cursorX, cursorY, torchRadius)
+        if (isDark) {
+          torch.addColorStop(0, "rgba(56, 189, 248, 0.16)")
+          torch.addColorStop(0.3, "rgba(56, 189, 248, 0.07)")
+          torch.addColorStop(0.65, "rgba(14, 165, 233, 0.02)")
+          torch.addColorStop(1, "rgba(0, 0, 0, 0)")
+        } else {
+          torch.addColorStop(0, "rgba(14, 165, 233, 0.14)")
+          torch.addColorStop(0.4, "rgba(14, 165, 233, 0.05)")
+          torch.addColorStop(1, "rgba(255, 255, 255, 0)")
+        }
+        ctx.fillStyle = torch
+        ctx.beginPath()
+        ctx.arc(cursorX, cursorY, torchRadius, 0, Math.PI * 2)
+        ctx.fill()
         ctx.restore()
       }
 
-      // 3. Mathematical 3D Geodesic SSIT Wireframe Globe
+      // 3. Mathematical 3D Geodesic SSIT Wireframe Globe (Large, subtle, integrated)
       const isMobile = width < 768
-      const globeRadius = Math.min(width, height) * (isMobile ? 0.42 : 0.48)
-      const globeCx = width * (isMobile ? 0.5 : 0.72)
-      const globeCy = height * (isMobile ? 0.32 : 0.42) - scrollY * 0.22
+      const globeRadius = Math.min(width, height) * (isMobile ? 0.48 : 0.55)
+      // Centered / slightly offset for a majestic, balanced backdrop
+      const globeCx = width * (isMobile ? 0.5 : 0.58)
+      const globeCy = height * (isMobile ? 0.38 : 0.46) - scrollY * 0.18
 
       if (!prefersReducedMotion) {
-        globeYaw += 0.0016
+        globeYaw += 0.0014
       }
 
       // 3a. Volumetric Globe Radial Glow

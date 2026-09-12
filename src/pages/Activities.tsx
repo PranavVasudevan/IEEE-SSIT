@@ -36,7 +36,7 @@ export default function Activities() {
 
   return (
     <div className="pt-28 pb-20 px-4 md:px-8 space-y-12">
-      <div className="max-w-[1600px] mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Header & Sub-Tabs */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b" style={{ borderColor: tint("border", 0.6) }}>
           <div>

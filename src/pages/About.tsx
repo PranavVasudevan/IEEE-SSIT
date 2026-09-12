@@ -7,7 +7,6 @@ import { useTeam, useChapterInfo } from "@/firebase/firestore"
 import { useDocumentTitle } from "@/hooks/useDocumentTitle"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { PersonCardSkeletonGrid } from "@/components/ui/Skeleton"
-import ssitLogo from "@/assets/images/ssit-logo.png"
 
 function getMemberInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -35,27 +34,19 @@ export default function About() {
 
   return (
     <div className="pt-28 pb-20 px-4 md:px-8 space-y-12">
-      <div className="max-w-[1600px] mx-auto space-y-8">
-        {/* Header with SSIT Emblem */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b" style={{ borderColor: tint("border", 0.6) }}>
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <img
-                src={ssitLogo}
-                alt="IEEE SSIT Logo"
-                className="h-12 w-auto object-contain rounded-lg p-1 bg-black/5 dark:bg-white/5 border border-black/10"
-              />
-              <div>
-                <SectionLabel>About the Society</SectionLabel>
-                <h1 className="font-display text-3xl md:text-5xl font-bold" style={{ color: solid("ink") }}>
-                  Technology & Human Responsibility
-                </h1>
-              </div>
-            </div>
-          </div>
+      <div className="max-w-6xl mx-auto space-y-10">
+        {/* Header - Centered Editorial Alignment (No duplicate logo!) */}
+        <div className="text-center max-w-3xl mx-auto space-y-3 pb-6 border-b border-slate-800">
+          <SectionLabel>About IEEE SSIT</SectionLabel>
+          <h1 className="font-display text-4xl md:text-5xl font-bold text-white tracking-tight">
+            Technology & Human Responsibility
+          </h1>
+          <p className="font-sans-ui text-sm md:text-base text-slate-300 font-light leading-relaxed">
+            Advancing Technology for Humanity · IEEE Society on Social Implications of Technology
+          </p>
 
-          {/* Interactive Sub-Tabs for rapid single-view navigation */}
-          <div className="flex flex-wrap gap-1.5 p-1.5 rounded-2xl border" style={{ background: solid("bgWarm"), borderColor: tint("border", 0.6) }}>
+          {/* Centered Navigation Pills */}
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
             {[
               { id: "overview", label: "Overview & Mission", icon: Icons.About },
               { id: "focus", label: `Focus Areas (${chapterInfo.focusAreas.length})`, icon: Icons.Target },
@@ -68,14 +59,13 @@ export default function About() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-sans-ui font-semibold transition-all duration-200 cursor-pointer"
-                  style={{
-                    background: isActive ? navySolid : "transparent",
-                    color: isActive ? "#ffffff" : solid("muted"),
-                    boxShadow: isActive ? `0 2px 8px ${tint("navy", 0.25)}` : "none",
-                  }}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-sans-ui font-medium transition-all ${
+                    isActive
+                      ? "bg-cyan-400 text-slate-950 font-bold shadow-md"
+                      : "bg-slate-900/60 text-slate-300 hover:text-white border border-slate-800"
+                  }`}
                 >
-                  <IconComponent size={13} />
+                  <IconComponent size={14} />
                   <span>{tab.label}</span>
                 </button>
               )
