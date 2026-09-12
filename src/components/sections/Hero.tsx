@@ -1,49 +1,117 @@
 import { Link } from "react-router-dom"
 import { solid, tint } from "@/styles/colors"
 import { useTypewriter } from "@/hooks/useTypewriter"
-import ssitLogo from "@/assets/images/ssit-logo.png"
+import { orgInfo } from "@/data/ssit"
 
 export function Hero() {
-  const typed = useTypewriter(["technology", "society", "tomorrow"], 90, 1800)
+  const typedFocus = useTypewriter(
+    ["Ethical Systems", "Human Responsibility", "Public Interest Tech", "Sustainable Progress"],
+    90,
+    1800
+  )
+
   return (
-    <section className="px-5 md:px-10 pt-12 md:pt-20 pb-20 md:pb-28">
-      <div className="max-w-[1600px] mx-auto">
-        <div className="grid lg:grid-cols-[1.12fr_.88fr] gap-12 lg:gap-20 items-start">
-          <div>
-            <div className="flex items-center gap-3 mb-12 animate-fade-up">
-              <img src={ssitLogo} alt="IEEE SSIT" className="h-9 w-auto object-contain" />
-              <span className="font-sans-ui text-[10px] uppercase tracking-[.18em]" style={{ color: solid("muted") }}>A student chapter of IEEE SSIT</span>
-            </div>
-            <p className="font-sans-ui text-[10px] uppercase tracking-[.18em] mb-5 animate-fade-up" style={{ color: solid("gold"), animationDelay: ".08s" }}>Technology & society · Chennai</p>
-            <h1 className="font-display text-[clamp(4.5rem,11vw,10.5rem)] leading-[1.1] font-medium tracking-[-.045em] animate-fade-up" style={{ color: solid("ink"), animationDelay: ".15s" }}>
-              Shaping the<br /><em style={{ color: solid("gold") }}>social</em> future<br />of <span style={{ color: solid("navy"), borderBottom: `1px solid ${tint("navy", .45)}` }}>{typed}</span><span className="cursor-blink inline-block ml-2 h-[.62em] w-[2px] align-baseline" style={{ background: solid("gold") }} />
-            </h1>
-          </div>
-          <div className="animate-fade-up" style={{ animationDelay: ".3s" }}>
-            <div
-              className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-6 flex items-center justify-center p-8 transition-all duration-300 hover:scale-[1.01]"
-              style={{
-                background: `linear-gradient(145deg, rgba(var(--c-bg-rgb), 0.95), rgba(var(--c-bg-warm-rgb), 0.85))`,
-                border: `1px solid ${tint("border", 0.8)}`,
-                boxShadow: `0 20px 40px -15px ${tint("black", 0.08)}`,
-              }}
-            >
-              <img
-                src={ssitLogo}
-                alt="IEEE SSIT SSN Chapter Emblem"
-                className="max-h-[85%] max-w-[85%] object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105"
-              />
-            </div>
-            <p className="font-sans-ui text-sm md:text-base leading-relaxed max-w-md" style={{ color: solid("muted") }}>We explore the profound intersection of technology and humanity through critical inquiry, ethical practice, and meaningful dialogue.</p>
-          </div>
+    <section className="relative px-5 md:px-10 lg:px-12 pt-28 md:pt-36 pb-20 md:pb-28 overflow-hidden">
+      <div className="max-w-5xl mx-auto text-center space-y-8 relative z-10">
+        {/* Institutional Chapter Badge */}
+        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-md animate-fade-up">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <span className="font-mono text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
+            IEEE SSIT Student Branch Chapter · SSN CE
+          </span>
         </div>
-        <div className="mt-16 pt-6 flex flex-col md:flex-row md:items-center justify-between gap-6" style={{ borderTop: `1px solid ${tint("border", .8)}` }}>
-          <div className="flex flex-wrap gap-x-8 gap-y-3">
-            {[{ num: "1972", label: "TAB committee founded" }, { num: "1982", label: "IEEE SSIT established" }, { num: "06", label: "Technical activity areas" }].map((stat) => <div key={stat.label} className="flex items-baseline gap-2"><span className="font-display text-2xl" style={{ color: solid("ink") }}>{stat.num}</span><span className="font-sans-ui text-[10px] uppercase tracking-[.12em]" style={{ color: solid("muted") }}>{stat.label}</span></div>)}
-          </div>
-          <div className="flex gap-5 font-sans-ui text-[11px] uppercase tracking-[.14em]">
-            <Link to="/about" style={{ color: solid("navy") }}>Explore our work ↗</Link>
-            <Link to="/membership" style={{ color: solid("gold") }}>Join the chapter ↗</Link>
+
+        {/* Primary Headline with Editorial Typography & Centered Axis */}
+        <div className="space-y-4 max-w-4xl mx-auto">
+          <h1
+            className="font-display text-[clamp(2.8rem,6.5vw,5.5rem)] leading-[1.08] font-bold tracking-tight text-white animate-fade-up"
+            style={{ animationDelay: ".1s" }}
+          >
+            Shaping the social implications of{" "}
+            <span
+              className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-amber-300 inline-block"
+            >
+              {typedFocus}
+            </span>
+            <span
+              className="cursor-blink inline-block ml-1.5 h-[0.7em] w-[3px] align-baseline bg-amber-400"
+            />
+          </h1>
+
+          <p
+            className="font-sans-ui text-base md:text-xl text-slate-300 font-light leading-relaxed max-w-2xl mx-auto pt-2 animate-fade-up"
+            style={{ animationDelay: ".18s" }}
+          >
+            {orgInfo.ssitTagline} — exploring the profound intersection of technology, engineering ethics, and human responsibility.
+          </p>
+        </div>
+
+        {/* Primary CTAs */}
+        <div
+          className="flex flex-wrap items-center justify-center gap-4 pt-2 animate-fade-up"
+          style={{ animationDelay: ".24s" }}
+        >
+          <Link
+            to="/activities"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold bg-cyan-400 text-slate-950 hover:bg-cyan-300 transition-all shadow-lg hover:shadow-cyan-400/25 active:scale-95"
+          >
+            Explore Activities →
+          </Link>
+          <Link
+            to="/about"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold border border-slate-700 bg-slate-900/60 text-white hover:bg-slate-800/80 hover:border-slate-600 transition-all active:scale-95 backdrop-blur-md"
+          >
+            Chapter Story
+          </Link>
+          <Link
+            to="/membership"
+            className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold text-amber-300 hover:text-amber-200 transition-colors"
+          >
+            Join IEEE SSIT ↗
+          </Link>
+        </div>
+
+        {/* Institutional Milestones Rulers (Open Canvas, Centered, No Fake Boxes) */}
+        <div
+          className="pt-14 border-t border-slate-800/80 max-w-4xl mx-auto animate-fade-up"
+          style={{ animationDelay: ".3s" }}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6 text-left sm:text-center">
+            <div className="space-y-1 sm:border-r border-slate-800/80 sm:pr-6">
+              <div className="font-display text-3xl md:text-4xl font-extrabold text-cyan-400">
+                1972
+              </div>
+              <div className="font-sans-ui text-xs font-semibold uppercase tracking-wider text-white">
+                TAB Committee Founded
+              </div>
+              <div className="font-sans-ui text-xs text-slate-400 leading-snug">
+                Committee on Social Implications of Technology established
+              </div>
+            </div>
+
+            <div className="space-y-1 sm:border-r border-slate-800/80 sm:px-6">
+              <div className="font-display text-3xl md:text-4xl font-extrabold text-amber-400">
+                1982
+              </div>
+              <div className="font-sans-ui text-xs font-semibold uppercase tracking-wider text-white">
+                SSIT Society Formed
+              </div>
+              <div className="font-sans-ui text-xs text-slate-400 leading-snug">
+                Formally established as IEEE Society on Social Implications of Tech
+              </div>
+            </div>
+
+            <div className="space-y-1 sm:pl-6">
+              <div className="font-display text-3xl md:text-4xl font-extrabold text-cyan-400">
+                06
+              </div>
+              <div className="font-sans-ui text-xs font-semibold uppercase tracking-wider text-white">
+                Technical Working Areas
+              </div>
+              <div className="font-sans-ui text-xs text-slate-400 leading-snug">
+                Interdisciplinary working groups addressing societal impact
+              </div>
+            </div>
           </div>
         </div>
       </div>

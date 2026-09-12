@@ -12,9 +12,11 @@ export function Layout() {
   }, [pathname])
 
   return (
-    <div className="min-h-screen" style={{ background: solid("bg") }}>
+    <div className="min-h-screen relative z-10 flex flex-col">
       <Navbar />
-      <Outlet />
+      <main className="flex-1 relative">
+        <Outlet />
+      </main>
       <Footer />
     </div>
   )

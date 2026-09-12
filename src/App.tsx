@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { ThemeProvider } from "@/context/ThemeContext"
 import { ToastProvider } from "@/components/ui/Toast"
+import { InteractiveBackground } from "@/components/ui/InteractiveBackground"
 import { Layout } from "@/components/layout/Layout"
 import Home from "@/pages/Home"
 import About from "@/pages/About"
@@ -17,6 +18,7 @@ export default function App() {
     <ThemeProvider>
       <ToastProvider>
         <BrowserRouter>
+          <InteractiveBackground />
           <Routes>
             {/* Public Pages with Standard Layout Header & Footer */}
             <Route element={<Layout />}>

@@ -45,7 +45,7 @@ export default function Contact() {
 
   return (
     <div className="pt-28 pb-20 px-4 md:px-8 space-y-12">
-      <div className="max-w-[1600px] mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left: Contact Info & Chapter Coordinates */}
           <div className="space-y-8">

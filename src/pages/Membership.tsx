@@ -14,7 +14,7 @@ export default function Membership() {
 
   return (
     <div className="pt-28 pb-20 px-4 md:px-8 space-y-16">
-      <div className="max-w-[1600px] mx-auto space-y-12">
+      <div className="max-w-6xl mx-auto space-y-12">
         {/* Header */}
         <div className="max-w-3xl space-y-4">
           <SectionLabel>Student Membership</SectionLabel>

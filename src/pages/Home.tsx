@@ -3,377 +3,140 @@ import { Link } from "react-router-dom"
 import { Hero } from "@/components/sections/Hero"
 import { SectionLabel } from "@/components/ui/SectionLabel"
 import { orgInfo, technicalActivityAreas } from "@/data/ssit"
-import { solid, tint, navySolid } from "@/styles/colors"
+import { solid } from "@/styles/colors"
 import { Icons } from "@/components/ui/Icons"
 import { useEvents } from "@/firebase/firestore"
-import { EmptyState } from "@/components/ui/EmptyState"
 import { CardSkeletonGrid } from "@/components/ui/Skeleton"
 
-// Interactive Ethics Dilemma Widget
-const DILEMMAS = [
+// Genuine Interactive Ethics Scenarios for student engagement
+const ETHICS_SCENARIOS = [
   {
-    id: "ai-bias",
-    topic: "AI in Automated Hiring",
-    question: "Should companies be legally prohibited from using autonomous AI algorithms in screening job applicants without human oversight?",
-    optA: "Yes, algorithmic bias poses unacceptable civil rights risks.",
-    optB: "No, AI reduces subjective human favoritism when properly audited.",
+    id: "ai-hiring",
+    topic: "Algorithmic Decision Making",
+    question:
+      "Should companies be legally prohibited from using autonomous AI algorithms in screening job applicants without direct human oversight?",
+    optA: "Yes, automated screening poses unacceptable bias and discrimination risks.",
+    optB: "No, automated screening reduces subjective human favoritism when audited.",
     votesA: 68,
     votesB: 32,
+    context:
+      "IEEE SSIT explores how algorithmic accountability standards protect civil liberties in professional systems.",
   },
   {
-    id: "autonomous-vehicles",
-    topic: "Autonomous Vehicle Ethics",
-    question: "In unavoidable crash scenarios, should self-driving vehicles prioritize passenger survival or minimizing total casualties?",
-    optA: "Minimize total casualties (Utilitarian approach).",
-    optB: "Protect the vehicle passengers who purchased the vehicle.",
+    id: "autonomous-systems",
+    topic: "Autonomous Vehicle Dilemmas",
+    question:
+      "In unavoidable collision scenarios, should self-driving vehicles be programmed to minimize total casualties or prioritize vehicle occupants?",
+    optA: "Minimize total casualties across all individuals involved.",
+    optB: "Prioritize the protection of the vehicle occupants.",
     votesA: 81,
     votesB: 19,
+    context:
+      "Examining utilitarian ethics versus consumer duty in safety-critical automated infrastructure.",
   },
   {
-    id: "facial-rec",
-    topic: "Public Surveillance & Privacy",
-    question: "Should law enforcement use real-time biometric facial recognition in public transit hubs?",
-    optA: "Ban real-time facial surveillance to protect public privacy.",
-    optB: "Allow with judicial warrants for active threat prevention.",
+    id: "biometric-surveillance",
+    topic: "Biometric Data & Public Transit",
+    question:
+      "Should municipal transit authorities deploy real-time facial recognition in public hubs without active individual consent?",
+    optA: "Prohibit real-time facial surveillance to uphold public privacy rights.",
+    optB: "Permit under judicial oversight for active public safety protection.",
     votesA: 54,
     votesB: 46,
-  }
+    context:
+      "Balancing collective security against constitutional privacy and mass surveillance concerns.",
+  },
 ]
 
 export default function Home() {
   const { events, loading: eventsLoading } = useEvents()
-  const upcomingEvents = events.filter(e => e.status === "upcoming")
-  const [selectedDilemmaIdx, setSelectedDilemmaIdx] = useState(0)
+  const upcomingEvents = events.filter((e) => e.status === "upcoming")
+  const [selectedScenarioIdx, setSelectedScenarioIdx] = useState(0)
   const [userVoted, setUserVoted] = useState<Record<string, "A" | "B">>({})
 
-  const currentDilemma = DILEMMAS[selectedDilemmaIdx]
-  const hasVoted = userVoted[currentDilemma.id] !== undefined
+  const currentScenario = ETHICS_SCENARIOS[selectedScenarioIdx]
+  const hasVoted = userVoted[currentScenario.id] !== undefined
 
   const handleVote = (choice: "A" | "B") => {
-    setUserVoted(prev => ({ ...prev, [currentDilemma.id]: choice }))
+    setUserVoted((prev) => ({ ...prev, [currentScenario.id]: choice }))
   }
 
   return (
-    <div className="space-y-16 md:space-y-24">
+    <div className="space-y-28 md:space-y-36 relative z-10">
+      {/* 1. Centered Institutional Hero */}
       <Hero />
 
-      {/* Quick Navigation / Single-View Tab Strip (inspired by Photonics reference) */}
-      <section className="px-4 md:px-8 -mt-6">
-        <div className="max-w-[1600px] mx-auto">
-          <div
-            className="p-3 md:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 border shadow-sm"
-            style={{
-              background: solid("bgWarm"),
-              borderColor: tint("border", 0.7),
-            }}
-          >
-            <div className="flex items-center gap-2 px-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-              <span className="font-sans-ui text-xs font-bold uppercase tracking-wider" style={{ color: solid("navy") }}>
-                Explore Chapter
-              </span>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {[
-                { label: "Overview & Mission", to: "/about", icon: Icons.About },
-                { label: "Conferences & Events", to: "/activities", icon: Icons.Calendar },
-                { label: "Membership Benefits", to: "/membership", icon: Icons.Users },
-                { label: "Photo Gallery", to: "/gallery", icon: Icons.Gallery },
-                { label: "Contact Secretariats", to: "/contact", icon: Icons.Mail },
-              ].map((tab) => {
-                const IconComponent = tab.icon
-                return (
-                  <Link
-                    key={tab.to}
-                    to={tab.to}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-sans-ui font-medium border transition-all duration-200 hover:scale-105 hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
-                    style={{
-                      borderColor: tint("border", 0.6),
-                      background: solid("bg"),
-                      color: solid("ink"),
-                    }}
-                  >
-                    <IconComponent size={14} className="text-amber-500" />
-                    <span>{tab.label}</span>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Metrics / Impact Counter */}
-      <section className="px-4 md:px-8">
-        <div className="max-w-[1600px] mx-auto">
-          <div
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 p-8 rounded-3xl border shadow-sm"
-            style={{
-              background: "linear-gradient(135deg, rgba(30, 58, 138, 0.04) 0%, rgba(217, 119, 6, 0.04) 100%)",
-              borderColor: tint("border", 0.6),
-            }}
-          >
-            {[
-              { num: "50+", label: "Years of Global Legacy", sub: "Est. 1972 (TAB) / 1982 (SSIT)" },
-              { num: "6", label: "Core Technical Domains", sub: "Ethics, Climate, Access & AI" },
-              { num: "8+", label: "International Conferences", sub: "ISTAS, ETHICS, GHTC & more" },
-              { num: "100%", label: "Student Empowered", sub: "SSN CE Student Branch Chapter" },
-            ].map((stat, i) => (
-              <div key={i} className="text-center p-3 space-y-1">
-                <div className="font-display font-extrabold text-3xl md:text-5xl" style={{ color: solid("navy") }}>
-                  {stat.num}
-                </div>
-                <div className="font-sans-ui font-semibold text-xs md:text-sm" style={{ color: solid("ink") }}>
-                  {stat.label}
-                </div>
-                <div className="font-sans-ui text-[11px]" style={{ color: solid("muted") }}>
-                  {stat.sub}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Upcoming Events Spotlight Carousel / Grid */}
-      <section className="px-4 md:px-8">
-        <div className="max-w-[1600px] mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-            <div>
-              <SectionLabel>Live Programs</SectionLabel>
-              <h2 className="font-display text-2xl md:text-4xl font-bold" style={{ color: solid("ink") }}>
-                Upcoming Chapter Events & Workshops
-              </h2>
-            </div>
-            <Link
-              to="/activities"
-              className="font-sans-ui text-xs uppercase tracking-wider font-semibold hover:underline flex items-center gap-1"
-              style={{ color: solid("navy") }}
-            >
-              View Full 2025 Calendar →
-            </Link>
-          </div>
-
-          {eventsLoading ? (
-            <CardSkeletonGrid count={3} />
-          ) : upcomingEvents.length === 0 ? (
-            <EmptyState
-              icon={Icons.Calendar}
-              title="No upcoming events right now"
-              message="New workshops and conferences are added regularly — check the full calendar or follow our socials for updates."
-              action={
-                <Link
-                  to="/activities"
-                  className="mt-1 px-4 py-2 rounded-lg font-sans-ui text-xs uppercase tracking-wider font-semibold text-white"
-                  style={{ background: navySolid }}
-                >
-                  View Full Calendar
-                </Link>
-              }
-            />
-          ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {upcomingEvents.slice(0, 3).map((event) => (
-              <div
-                key={event.id}
-                className="rounded-2xl border overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-                style={{
-                  background: solid("bgWarm"),
-                  borderColor: tint("border", 0.6),
-                }}
-              >
-                {event.image && (
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-sans-ui font-semibold text-white bg-black/60 backdrop-blur-md">
-                        {event.category}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-sans-ui font-semibold text-amber-200 bg-amber-900/80 backdrop-blur-md">
-                        {event.mode}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-sans-ui" style={{ color: solid("gold") }}>
-                      <Icons.Calendar size={13} />
-                      <span className="font-medium">{event.date}</span>
-                      {event.time && <span>• {event.time}</span>}
-                    </div>
-                    <h3 className="font-display font-bold text-lg leading-snug" style={{ color: solid("ink") }}>
-                      {event.title}
-                    </h3>
-                    <p className="font-sans-ui text-xs leading-relaxed line-clamp-3" style={{ color: solid("muted") }}>
-                      {event.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-3 border-t flex items-center justify-between gap-3" style={{ borderColor: tint("border", 0.5) }}>
-                    <span className="font-sans-ui text-[11px] truncate flex items-center gap-1" style={{ color: solid("muted") }}>
-                      <Icons.MapPin size={11} className="shrink-0" /> {event.location}
-                    </span>
-                    {event.registerUrl ? (
-                      <a
-                        href={event.registerUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-sans-ui font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
-                        style={{ background: navySolid }}
-                      >
-                        Register
-                      </a>
-                    ) : (
-                      <Link
-                        to="/activities"
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-sans-ui font-semibold border transition-colors shrink-0"
-                        style={{ borderColor: tint("border", 0.8), color: solid("ink") }}
-                      >
-                        Details
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          )}
-        </div>
-      </section>
-
-      {/* Interactive Tech Ethics Dilemma Hub */}
-      <section className="px-4 md:px-8">
-        <div className="max-w-[1600px] mx-auto">
-          <div
-            className="p-8 md:p-12 rounded-3xl border shadow-lg relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 58, 138, 0.95) 100%)",
-              color: "#ffffff",
-              borderColor: "rgba(255, 255, 255, 0.1)",
-            }}
-          >
-            <div className="grid md:grid-cols-5 gap-8 items-center">
-              <div className="md:col-span-2 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-sans-ui font-semibold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                  <Icons.MessageCircle size={13} />
-                  Interactive IEEE SSIT Forum
-                </div>
-                <h2 className="font-display text-2xl md:text-4xl font-bold leading-tight">
-                  Technology & Ethics Dilemma
-                </h2>
-                <p className="font-sans-ui text-sm text-slate-300 leading-relaxed">
-                  Engineers shape human destiny. Vote on real-world socio-technical dilemmas facing our generation and see how your peers at SSN CE vote.
-                </p>
-
-                {/* Topic selector */}
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {DILEMMAS.map((d, idx) => (
-                    <button
-                      key={d.id}
-                      onClick={() => setSelectedDilemmaIdx(idx)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-sans-ui font-semibold transition-all ${
-                        selectedDilemmaIdx === idx
-                          ? "bg-amber-500 text-slate-950 font-bold"
-                          : "bg-white/10 text-white hover:bg-white/20"
-                      }`}
-                    >
-                      {d.topic}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Dilemma Voting Card */}
-              <div className="md:col-span-3 bg-white/10 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/15 space-y-6">
-                <div className="space-y-2">
-                  <span className="text-xs uppercase tracking-widest text-amber-300 font-mono font-semibold">
-                    Case Study #{selectedDilemmaIdx + 1}
-                  </span>
-                  <h3 className="font-display font-semibold text-lg md:text-xl text-white">
-                    {currentDilemma.question}
-                  </h3>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Option A */}
-                  <button
-                    onClick={() => handleVote("A")}
-                    className={`w-full p-4 rounded-xl border text-left transition-all relative overflow-hidden group ${
-                      userVoted[currentDilemma.id] === "A" ? "border-amber-400 bg-amber-500/20" : "border-white/20 bg-white/5 hover:bg-white/10"
-                    }`}
-                  >
-                    {hasVoted && (
-                      <div
-                        className="absolute inset-0 bg-amber-500/20 pointer-events-none transition-all duration-1000"
-                        style={{ width: `${currentDilemma.votesA}%` }}
-                      />
-                    )}
-                    <div className="relative flex items-center justify-between gap-3 text-sm font-sans-ui">
-                      <span className="font-medium text-white">{currentDilemma.optA}</span>
-                      {hasVoted && (
-                        <span className="font-bold font-mono text-amber-300 shrink-0">
-                          {currentDilemma.votesA}%
-                        </span>
-                      )}
-                    </div>
-                  </button>
-
-                  {/* Option B */}
-                  <button
-                    onClick={() => handleVote("B")}
-                    className={`w-full p-4 rounded-xl border text-left transition-all relative overflow-hidden group ${
-                      userVoted[currentDilemma.id] === "B" ? "border-blue-400 bg-blue-500/20" : "border-white/20 bg-white/5 hover:bg-white/10"
-                    }`}
-                  >
-                    {hasVoted && (
-                      <div
-                        className="absolute inset-0 bg-blue-500/20 pointer-events-none transition-all duration-1000"
-                        style={{ width: `${currentDilemma.votesB}%` }}
-                      />
-                    )}
-                    <div className="relative flex items-center justify-between gap-3 text-sm font-sans-ui">
-                      <span className="font-medium text-white">{currentDilemma.optB}</span>
-                      {hasVoted && (
-                        <span className="font-bold font-mono text-blue-300 shrink-0">
-                          {currentDilemma.votesB}%
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-slate-400 font-sans-ui pt-2">
-                  <span className="flex items-center gap-1">
-                    {hasVoted && <Icons.Check size={12} className="text-emerald-400" />}
-                    {hasVoted ? "Vote recorded" : "Click an option to cast your vote"}
-                  </span>
-                  <Link to="/about" className="text-amber-300 hover:underline">
-                    Explore IEEE SSIT Ethics Standards →
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Technical Activity Areas Spotlight */}
-      <section className="px-4 md:px-8">
-        <div className="max-w-[1600px] mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-            <SectionLabel>Core Domains</SectionLabel>
-            <h2 className="font-display text-2xl md:text-4xl font-bold" style={{ color: solid("ink") }}>
-              IEEE SSIT Technical Activity Areas
+      {/* 2. Centered Impact & Global Heritage Metrics */}
+      <section className="px-5 md:px-10 lg:px-12">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <SectionLabel>Global Society Impact</SectionLabel>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">
+              Five Decades of Technological Stewardship
             </h2>
-            <p className="font-sans-ui text-sm" style={{ color: solid("muted") }}>
-              Six interdisciplinary pillars driving ethical technology research and human advancement.
+            <p className="font-sans-ui text-sm md:text-base text-slate-300 font-light leading-relaxed">
+              Empowering engineers, students, and citizens to understand and guide the social implications of technology.
+            </p>
+          </div>
+
+          <div className="py-8 border-y border-slate-800/80">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+              {[
+                {
+                  num: "50+",
+                  label: "Years of Heritage",
+                  desc: "Founded under TAB in 1972 · Society since 1982",
+                  accent: "text-cyan-400",
+                },
+                {
+                  num: "6",
+                  label: "Technical Working Areas",
+                  desc: "Covering ethics, climate, AI & digital access",
+                  accent: "text-amber-400",
+                },
+                {
+                  num: "8+",
+                  label: "Sponsored Conferences",
+                  desc: "Flagship symposiums including ISTAS & ETHICS",
+                  accent: "text-cyan-400",
+                },
+                {
+                  num: "100%",
+                  label: "Student Driven",
+                  desc: "SSN CE Student Branch Chapter initiatives",
+                  accent: "text-amber-400",
+                },
+              ].map((stat, i) => (
+                <div
+                  key={i}
+                  className="space-y-2 text-center lg:border-r border-slate-800/60 last:border-r-0 px-3"
+                >
+                  <div className={`font-display font-bold text-4xl md:text-5xl tracking-tight ${stat.accent}`}>
+                    {stat.num}
+                  </div>
+                  <div className="font-sans-ui font-semibold text-sm md:text-base text-white">
+                    {stat.label}
+                  </div>
+                  <div className="font-sans-ui text-xs text-slate-400 leading-relaxed max-w-[200px] mx-auto">
+                    {stat.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Technical Activity Areas (Structured Grid) */}
+      <section className="px-5 md:px-10 lg:px-12">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <SectionLabel>Core Focus</SectionLabel>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-white tracking-tight">
+              Technical Activity Areas
+            </h2>
+            <p className="font-sans-ui text-sm md:text-base text-slate-300 font-light leading-relaxed">
+              Six working groups driving research, ethical guidelines, and responsible engineering standards.
             </p>
           </div>
 
@@ -381,38 +144,33 @@ export default function Home() {
             {technicalActivityAreas.map((area) => (
               <div
                 key={area.title}
-                className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 group transition-all duration-300 hover:shadow-lg"
-                style={{
-                  background: solid("bgWarm"),
-                  borderColor: tint("border", 0.6),
-                }}
+                className="p-7 md:p-8 rounded-2xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl flex flex-col justify-between space-y-6 hover:border-cyan-500/40 hover:-translate-y-1 transition-all duration-300 shadow-lg"
               >
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <span
-                      className="w-3 h-3 rounded-full"
+                      className="w-2.5 h-2.5 rounded-full"
                       style={{ background: solid(area.accent) }}
                     />
-                    <span className="text-[11px] font-sans-ui font-semibold uppercase tracking-wider" style={{ color: solid("muted") }}>
-                      IEEE SSIT Technical Area
+                    <span className="font-mono text-xs uppercase tracking-wider text-slate-400">
+                      Working Group
                     </span>
                   </div>
-                  <h3 className="font-display font-bold text-lg leading-snug" style={{ color: solid("ink") }}>
+                  <h3 className="font-display font-bold text-xl text-white leading-snug">
                     {area.title}
                   </h3>
-                  <p className="font-sans-ui text-xs leading-relaxed" style={{ color: solid("muted") }}>
+                  <p className="font-sans-ui text-xs md:text-sm text-slate-300 font-light leading-relaxed">
                     {area.desc}
                   </p>
                 </div>
 
-                <div className="pt-4 border-t flex items-center justify-between text-xs" style={{ borderColor: tint("border", 0.5) }}>
-                  <span className="font-sans-ui font-medium" style={{ color: solid("navy") }}>
-                    Lead: {area.contactName}
+                <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                  <span className="font-sans-ui text-slate-400">
+                    Coordinator: <strong className="text-white font-medium">{area.contactName}</strong>
                   </span>
                   <a
                     href={`mailto:${area.contactEmail}`}
-                    className="hover:underline flex items-center gap-1 font-mono text-[11px]"
-                    style={{ color: solid("gold") }}
+                    className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
                   >
                     Email <Icons.Mail size={12} />
                   </a>
@@ -423,37 +181,224 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Quote & Membership CTA */}
-      <section className="px-4 md:px-8 pb-12">
-        <div className="max-w-[1600px] mx-auto">
-          <div
-            className="p-8 md:p-14 rounded-3xl text-center space-y-6 border"
-            style={{
-              background: navySolid,
-              color: "#ffffff",
-              borderColor: "rgba(255, 255, 255, 0.15)",
-            }}
-          >
-            <blockquote className="font-display italic text-lg md:text-2xl max-w-3xl mx-auto leading-relaxed text-slate-100">
-              "{orgInfo.quote}"
-            </blockquote>
-            <p className="font-sans-ui text-xs text-amber-300 uppercase tracking-widest font-semibold">
-              — {orgInfo.quoteAttribution}
-            </p>
-            <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
-              <Link
-                to="/membership"
-                className="px-6 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 transition-all shadow-md active:scale-95"
-              >
-                Join SSIT SSN Chapter
-              </Link>
-              <Link
-                to="/contact"
-                className="px-6 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-white/30 text-white hover:bg-white/10 transition-all active:scale-95"
-              >
-                Submit Inquiry
-              </Link>
+      {/* 4. Upcoming Chapter Events & Programs */}
+      <section className="px-5 md:px-10 lg:px-12">
+        <div className="max-w-6xl mx-auto space-y-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-slate-800">
+            <div>
+              <SectionLabel>Programs & Symposia</SectionLabel>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-white tracking-tight mt-1">
+                Upcoming Chapter Events
+              </h2>
             </div>
+            <Link
+              to="/activities"
+              className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-cyan-400 hover:text-cyan-300 transition-colors"
+            >
+              View All Activities & Calendar →
+            </Link>
+          </div>
+
+          {eventsLoading ? (
+            <CardSkeletonGrid count={3} />
+          ) : upcomingEvents.length === 0 ? (
+            <div className="p-10 md:p-14 rounded-2xl border border-slate-800 bg-slate-900/30 backdrop-blur-xl text-center space-y-4 max-w-2xl mx-auto">
+              <div className="inline-flex p-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                <Icons.Calendar size={26} />
+              </div>
+              <h3 className="font-display font-bold text-xl text-white">
+                Upcoming events will be announced shortly
+              </h3>
+              <p className="font-sans-ui text-xs md:text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
+                Explore our past symposia, conference calendar, and student workshops in the activities portal.
+              </p>
+              <div className="pt-2">
+                <Link
+                  to="/activities"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all shadow-md"
+                >
+                  Explore Chapter Activities →
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {upcomingEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="p-7 rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur-xl flex flex-col justify-between space-y-6 hover:border-slate-700 transition-all"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-mono text-amber-300">
+                      <Icons.Calendar size={13} />
+                      <span>{event.date}</span>
+                    </div>
+                    <h3 className="font-display font-bold text-xl text-white">
+                      {event.title}
+                    </h3>
+                    <p className="font-sans-ui text-xs md:text-sm text-slate-300 line-clamp-3 font-light leading-relaxed">
+                      {event.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+                    <span className="text-xs text-slate-400 font-mono">
+                      {event.location || "SSN Campus"}
+                    </span>
+                    {event.registerUrl ? (
+                      <a
+                        href={event.registerUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2 rounded-lg text-xs font-sans-ui font-semibold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all"
+                      >
+                        Register
+                      </a>
+                    ) : (
+                      <Link
+                        to="/activities"
+                        className="px-4 py-2 rounded-lg text-xs font-sans-ui font-semibold border border-slate-700 text-white hover:bg-white/5 transition-colors"
+                      >
+                        Details
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 5. Ethics Dilemma in Practice (Centered, Genuine) */}
+      <section className="px-5 md:px-10 lg:px-12">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <SectionLabel>Ethics in Practice</SectionLabel>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-white tracking-tight">
+              Technology & Human Dilemmas
+            </h2>
+            <p className="font-sans-ui text-sm md:text-base text-slate-300 font-light leading-relaxed">
+              Real dilemmas facing engineers and society today. Select a topic and vote to see how your perspective compares with peers.
+            </p>
+          </div>
+
+          <div className="p-8 md:p-12 rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur-2xl shadow-2xl space-y-8">
+            {/* Topic Selection Pills */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {ETHICS_SCENARIOS.map((scenario, idx) => (
+                <button
+                  key={scenario.id}
+                  onClick={() => setSelectedScenarioIdx(idx)}
+                  className={`px-4 py-2 rounded-xl text-xs font-sans-ui font-medium transition-all ${
+                    selectedScenarioIdx === idx
+                      ? "bg-cyan-400 text-slate-950 font-bold shadow-md"
+                      : "bg-slate-800/60 text-slate-300 hover:text-white border border-slate-700"
+                  }`}
+                >
+                  {scenario.topic}
+                </button>
+              ))}
+            </div>
+
+            {/* Scenario Question */}
+            <div className="text-center space-y-3 max-w-2xl mx-auto">
+              <h3 className="font-display font-semibold text-xl md:text-2xl text-white leading-snug">
+                "{currentScenario.question}"
+              </h3>
+              <p className="font-sans-ui text-xs text-slate-400">
+                {currentScenario.context}
+              </p>
+            </div>
+
+            {/* Voting Options */}
+            <div className="space-y-4 max-w-2xl mx-auto">
+              {/* Option A */}
+              <button
+                onClick={() => handleVote("A")}
+                className={`w-full p-5 rounded-2xl border text-left transition-all relative overflow-hidden group cursor-pointer ${
+                  userVoted[currentScenario.id] === "A"
+                    ? "border-amber-400 bg-amber-500/15"
+                    : "border-slate-800 bg-slate-900/70 hover:bg-slate-800/80 hover:border-slate-700"
+                }`}
+              >
+                {hasVoted && (
+                  <div
+                    className="absolute inset-0 bg-amber-500/20 pointer-events-none transition-all duration-700"
+                    style={{ width: `${currentScenario.votesA}%` }}
+                  />
+                )}
+                <div className="relative flex items-center justify-between gap-4 text-sm font-sans-ui">
+                  <span className="font-medium text-white">{currentScenario.optA}</span>
+                  {hasVoted && (
+                    <span className="font-bold font-mono text-amber-300 shrink-0 text-lg">
+                      {currentScenario.votesA}%
+                    </span>
+                  )}
+                </div>
+              </button>
+
+              {/* Option B */}
+              <button
+                onClick={() => handleVote("B")}
+                className={`w-full p-5 rounded-2xl border text-left transition-all relative overflow-hidden group cursor-pointer ${
+                  userVoted[currentScenario.id] === "B"
+                    ? "border-cyan-400 bg-cyan-500/15"
+                    : "border-slate-800 bg-slate-900/70 hover:bg-slate-800/80 hover:border-slate-700"
+                }`}
+              >
+                {hasVoted && (
+                  <div
+                    className="absolute inset-0 bg-cyan-500/20 pointer-events-none transition-all duration-700"
+                    style={{ width: `${currentScenario.votesB}%` }}
+                  />
+                )}
+                <div className="relative flex items-center justify-between gap-4 text-sm font-sans-ui">
+                  <span className="font-medium text-white">{currentScenario.optB}</span>
+                  {hasVoted && (
+                    <span className="font-bold font-mono text-cyan-300 shrink-0 text-lg">
+                      {currentScenario.votesB}%
+                    </span>
+                  )}
+                </div>
+              </button>
+            </div>
+
+            <div className="text-center pt-2">
+              <span className="font-sans-ui text-xs text-slate-400">
+                {hasVoted
+                  ? "Thank you for participating. Explore our technical activity areas to learn more."
+                  : "Click an option above to submit your perspective."}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Founding Principle / Melvin Kranzberg Quote */}
+      <section className="px-5 md:px-10 lg:px-12 pb-24">
+        <div className="max-w-4xl mx-auto text-center space-y-8 py-14 px-6 md:px-12 rounded-3xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl">
+          <blockquote className="font-display italic text-2xl md:text-3xl lg:text-4xl leading-relaxed text-white">
+            "{orgInfo.quote}"
+          </blockquote>
+
+          <p className="font-sans-ui text-xs md:text-sm text-amber-300 uppercase tracking-widest font-semibold">
+            — {orgInfo.quoteAttribution}
+          </p>
+
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              to="/membership"
+              className="px-7 py-3.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold bg-cyan-400 text-slate-950 hover:bg-cyan-300 transition-all shadow-md active:scale-95"
+            >
+              Join SSIT SSN Chapter →
+            </Link>
+            <Link
+              to="/contact"
+              className="px-7 py-3.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-slate-700 text-white hover:bg-slate-800/80 transition-all active:scale-95"
+            >
+              Contact Secretariat
+            </Link>
           </div>
         </div>
       </section>

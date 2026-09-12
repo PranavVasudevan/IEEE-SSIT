@@ -26,7 +26,12 @@ button, a, input, textarea { font: inherit; }
 a { text-underline-offset: 4px; }
 .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
 .font-sans-ui { font-family: 'Manrope', system-ui, sans-serif; }
-.rounded-xl, .rounded-2xl, .rounded-full { border-radius: 2px; }
+.glass-card {
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
 button, a { transition: color .2s ease, background-color .2s ease, border-color .2s ease, opacity .2s ease, transform .2s ease; }
 button:active, a:active { transform: scale(.98); }
 

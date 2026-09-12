@@ -25,7 +25,7 @@
       "destination": "/api/index.py"
     },
     {
-      "source": "/((?!api|health|docs|openapi.json|assets|ssit-logo|logo).*)",
+      "source": "/((?!api|health|docs|openapi.json|assets|ssit-logo|logo|favicon|og-image|robots.txt|sitemap.xml).*)",
       "destination": "/index.html"
     }
   ]
