@@ -10,3 +10,11 @@ if backend_dir not in sys.path:
 
 # Import the FastAPI application instance for Vercel Python Runtime
 from app.main import app
+
+# Automatically sync remote database schema & canonical team data on cold start
+try:
+    from seed import seed_database
+    seed_database()
+except Exception as e:
+    import logging
+    logging.getLogger("uvicorn.error").warning(f"Vercel auto-seed sync check: {e}")

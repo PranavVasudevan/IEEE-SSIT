@@ -640,8 +640,16 @@ def seed_database():
         ]
 
         for m in team_members:
-            existing = db.query(TeamMember).filter((TeamMember.name == m.name) | (TeamMember.id == m.id)).first()
+            # Primary lookup by unique ID, then secondary by email, then by name
+            existing = db.query(TeamMember).filter(TeamMember.id == m.id).first()
+            if not existing and m.email:
+                existing = db.query(TeamMember).filter(TeamMember.email == m.email).first()
+            if not existing:
+                existing = db.query(TeamMember).filter(TeamMember.name == m.name).first()
+
             if existing:
+                existing.id = m.id
+                existing.name = m.name
                 existing.photo = m.photo
                 existing.order = m.order
                 existing.role = m.role
@@ -651,8 +659,26 @@ def seed_database():
                 existing.quote = m.quote
                 existing.bio = m.bio
                 existing.email = m.email
+                existing.active = m.active
             else:
                 db.add(m)
+        db.commit()
+
+        # Clean any stale official IDs not in canonical list
+        official_ids = {m.id for m in team_members}
+        stale_records = db.query(TeamMember).filter(
+            TeamMember.id.like("team-ob-%") |
+            TeamMember.id.like("team-wd-%") |
+            TeamMember.id.like("team-ev-%") |
+            TeamMember.id.like("team-des-%") |
+            TeamMember.id.like("team-doc-%") |
+            TeamMember.id.like("team-log-%") |
+            TeamMember.id.like("team-mkt-%") |
+            TeamMember.id.like("team-photo-%")
+        ).all()
+        for rec in stale_records:
+            if rec.id not in official_ids:
+                db.delete(rec)
         db.commit()
         logger.info(f"Successfully synced {len(team_members)} official 2026 team members with photos.")
 

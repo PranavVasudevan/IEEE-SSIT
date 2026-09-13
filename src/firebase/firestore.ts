@@ -376,25 +376,76 @@ export async function deleteGalleryPhoto(id: string): Promise<boolean> {
 
 const LOCAL_TEAM_KEY = "ieee_ssit_team_store"
 
+export function deduplicateTeam(list: TeamMember[]): TeamMember[] {
+  const seenIds = new Set<string>()
+  const seenEmails = new Set<string>()
+  const seenNames = new Set<string>()
+  const result: TeamMember[] = []
+
+  for (const member of list) {
+    if (!member) continue
+
+    const id = member.id?.trim()
+    const email = member.email?.trim().toLowerCase()
+    const rawName = (member.name || "").trim().toLowerCase()
+    const simplifiedName = rawName.replace(/[^a-z0-9]/g, "")
+
+    // 1. Deduplicate by unique ID
+    if (id && seenIds.has(id)) continue
+
+    // 2. Deduplicate by unique Email
+    if (email && email.includes("@") && seenEmails.has(email)) continue
+
+    // 3. Deduplicate by Name (handling initials, e.g., "Mohammed Afzal" vs "Mohammed Afzal A R")
+    let isDuplicate = false
+    if (simplifiedName) {
+      for (const existing of seenNames) {
+        if (simplifiedName === existing) {
+          isDuplicate = true
+          break
+        }
+        if (simplifiedName.length > 6 && existing.length > 6) {
+          if (simplifiedName.startsWith(existing) || existing.startsWith(simplifiedName)) {
+            isDuplicate = true
+            break
+          }
+        }
+      }
+    }
+    if (isDuplicate) continue
+
+    if (id) seenIds.add(id)
+    if (email && email.includes("@")) seenEmails.add(email)
+    if (simplifiedName) seenNames.add(simplifiedName)
+
+    result.push(member)
+  }
+
+  return result.sort((a, b) => (a.order || 0) - (b.order || 0))
+}
+
 function getStoredTeam(): TeamMember[] {
   try {
     const saved = localStorage.getItem(LOCAL_TEAM_KEY)
     if (saved) {
       const parsed = JSON.parse(saved)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return deduplicateTeam(parsed)
+      }
     }
   } catch {}
-  return (OFFICIAL_CHAPTER_TEAM as unknown) as TeamMember[]
+  return deduplicateTeam((OFFICIAL_CHAPTER_TEAM as unknown) as TeamMember[])
 }
 
 function persistStoredTeam(list: TeamMember[]) {
   try {
-    localStorage.setItem(LOCAL_TEAM_KEY, JSON.stringify(list))
+    const clean = deduplicateTeam(list)
+    localStorage.setItem(LOCAL_TEAM_KEY, JSON.stringify(clean))
   } catch {}
 }
 
 export function useTeam() {
-  const [team, setTeam] = useState<TeamMember[]>(() => getStoredTeam())
+  const [team, setTeam] = useState<TeamMember[]>(() => deduplicateTeam(getStoredTeam()))
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -405,46 +456,68 @@ export function useTeam() {
         const list = await teamApi.getAll()
         if (isMounted) {
           if (list && list.length > 0) {
-            // Merge existing backend members with OFFICIAL_CHAPTER_TEAM to ensure photo and details are populated
+            // Merge existing backend members with canonical OFFICIAL_CHAPTER_TEAM
             const normalized = list.map((m) => {
               const official = OFFICIAL_CHAPTER_TEAM.find(
                 (o) =>
+                  o.id === m.id ||
+                  (m.email && o.email?.trim().toLowerCase() === m.email.trim().toLowerCase()) ||
                   o.name.trim().toLowerCase() === (m.name || "").trim().toLowerCase() ||
-                  o.id === m.id
+                  (o.name.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith((m.name || "").toLowerCase().replace(/[^a-z0-9]/g, "")))
               )
               return {
                 ...m,
+                name: official ? official.name : m.name,
+                role: official ? official.role : m.role,
                 teamType: (m.team_type || m.teamType || (official ? official.teamType : "Office Bearers")) as any,
                 photo: m.photo && m.photo.trim() !== "" ? m.photo : official?.photo || "",
-                quote: m.quote || official?.quote || "",
-                bio: m.bio || official?.bio || "",
+                quote: m.quote && m.quote.trim() !== "" ? m.quote : official?.quote || "",
+                bio: m.bio && m.bio.trim() !== "" ? m.bio : official?.bio || "",
                 department: m.department || official?.department || "",
                 year: m.year || official?.year || "",
                 email: m.email || official?.email || "",
-                order: m.order !== undefined ? m.order : official?.order ?? 99,
+                order: official?.order !== undefined ? official.order : (m.order ?? 99),
               }
             })
 
-            // Check for any official members missing in the backend response (e.g. newly added verticals)
-            const existingNames = new Set(normalized.map((m) => (m.name || "").trim().toLowerCase()))
-            const missingOfficial = ((OFFICIAL_CHAPTER_TEAM as unknown) as TeamMember[]).filter(
-              (o) => !existingNames.has((o.name || "").trim().toLowerCase())
+            // Only add official members if they truly do NOT exist in the backend
+            const existingIds = new Set(normalized.map((m) => m.id))
+            const existingEmails = new Set(normalized.map((m) => (m.email || "").trim().toLowerCase()).filter(Boolean))
+            const existingNames = new Set(
+              normalized.map((m) => (m.name || "").toLowerCase().replace(/[^a-z0-9]/g, ""))
             )
 
-            const merged = [...normalized, ...missingOfficial].sort(
-              (a, b) => (a.order || 0) - (b.order || 0)
-            )
-            setTeam(merged)
-            persistStoredTeam(merged)
+            const missingOfficial = ((OFFICIAL_CHAPTER_TEAM as unknown) as TeamMember[]).filter((o) => {
+              const oId = o.id
+              const oEmail = (o.email || "").trim().toLowerCase()
+              const oName = (o.name || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+
+              if (existingIds.has(oId)) return false
+              if (oEmail && existingEmails.has(oEmail)) return false
+              if (existingNames.has(oName)) return false
+              for (const ex of existingNames) {
+                if (ex.length > 5 && (ex.startsWith(oName) || oName.startsWith(ex))) {
+                  return false
+                }
+              }
+              return true
+            })
+
+            const clean = deduplicateTeam([...normalized, ...missingOfficial])
+            setTeam(clean)
+            persistStoredTeam(clean)
           } else {
-            setTeam(getStoredTeam())
+            const clean = deduplicateTeam(getStoredTeam())
+            setTeam(clean)
+            persistStoredTeam(clean)
           }
           setLoading(false)
         }
       } catch (err) {
         console.warn("Failed to fetch team from API, using official roster fallback:", err)
         if (isMounted) {
-          setTeam(getStoredTeam())
+          const clean = deduplicateTeam(getStoredTeam())
+          setTeam(clean)
           setLoading(false)
         }
       }
