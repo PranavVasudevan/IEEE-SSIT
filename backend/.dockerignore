@@ -9,5 +9,7 @@ htmlcov
 .git
 .gitignore
 .env
+.env.*
 .env.local
+!.env.example
 *.log

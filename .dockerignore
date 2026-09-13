@@ -8,6 +8,11 @@ dist-ssr
 backend/.venv
 backend/__pycache__
 backend/.env
+backend/.env.*
+!backend/.env.example
+.env
+.env.*
+!.env.example
 .venv
 *.log
 npm-debug.log*

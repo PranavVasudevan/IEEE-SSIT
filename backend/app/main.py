@@ -34,6 +34,18 @@ async def lifespan(app: FastAPI):
     try:
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables verified/created successfully.")
+
+        # Auto-seed initial chapter data if running locally or on fresh DB
+        try:
+            import sys
+            from pathlib import Path
+            backend_dir = str(Path(__file__).resolve().parent.parent)
+            if backend_dir not in sys.path:
+                sys.path.insert(0, backend_dir)
+            from seed import seed_database
+            seed_database()
+        except Exception as seed_err:
+            logger.info(f"Database auto-seed check: {seed_err}")
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
     yield
