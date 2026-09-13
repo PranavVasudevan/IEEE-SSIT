@@ -61,7 +61,7 @@ def seed_database():
                     year="BME III Year",
                     chapter="SSIT_2026",
                     quote="I came, I saw, I overthought, I fumbled.",
-                    email="smrithi2410145@ssn.edu.in",
+                    email="smrithi2410873@ssn.edu.in",
                     photo="/team/office-bearers/smrithis_3rdyear_bme_treasurer.jpg",
                     bio="I came, I saw, I overthought, I fumbled.",
                     order=3,
