@@ -76,7 +76,7 @@ def seed_database():
                     year="BME III Year",
                     chapter="SSIT_2026",
                     quote="Chill by nature. Serious when it matters.",
-                    email="yuvasriam2410182@ssn.edu.in",
+                    email="yuva2410379@ssn.edu.in",
                     photo="/team/office-bearers/yuva_bme_3rd_year_secretary.jpg",
                     bio="Chill by nature. Serious when it matters.",
                     order=4,

@@ -15,6 +15,7 @@ export const DEFAULT_ADMIN_EMAILS: string[] = [
   "vedika2410432@ssn.edu.in",
   "harshini2410197@ssn.edu.in",
   "pranav2410328@ssn.edu.in",
+  "yuva2410379@ssn.edu.in",
 ]
 
 export type UserRole = "admin" | "user" | "visitor"

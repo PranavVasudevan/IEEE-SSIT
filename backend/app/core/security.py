@@ -20,6 +20,7 @@ DEFAULT_ADMIN_EMAILS = [
     "vedika2410432@ssn.edu.in",
     "harshini2410197@ssn.edu.in",
     "pranav2410328@ssn.edu.in",
+    "yuva2410379@ssn.edu.in",
 ]
 
 # Initialize Firebase Admin if available
