@@ -917,6 +917,11 @@ def seed_database():
                 existing.active = ann.active
             else:
                 db.add(ann)
+        # Clean any stale announcements
+        canonical_ann_ids = {a.id for a in announcements_list}
+        for old_ann in db.query(Announcement).all():
+            if old_ann.id not in canonical_ann_ids and not old_ann.id.startswith("ann-custom-"):
+                db.delete(old_ann)
         db.commit()
         logger.info("Successfully synced announcements.")
 

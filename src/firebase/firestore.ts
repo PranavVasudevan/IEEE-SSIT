@@ -398,7 +398,7 @@ export async function deleteGalleryPhoto(id: string): Promise<boolean> {
 // 5. TEAM DIRECTORY CMS
 // =========================================================================
 
-const LOCAL_TEAM_KEY = "ieee_ssit_team_store"
+const LOCAL_TEAM_KEY = "ieee_ssit_team_store_v2026"
 
 export function deduplicateTeam(list: TeamMember[]): TeamMember[] {
   const seenIds = new Set<string>()
@@ -450,6 +450,9 @@ export function deduplicateTeam(list: TeamMember[]): TeamMember[] {
 
 function getStoredTeam(): TeamMember[] {
   try {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("ieee_ssit_team_store")
+    }
     const saved = localStorage.getItem(LOCAL_TEAM_KEY)
     if (saved) {
       const parsed = JSON.parse(saved)
