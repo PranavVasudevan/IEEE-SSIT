@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { DEFAULT_ADMIN_EMAILS, normalizeEmail, isOfficialSSNEmail } from "./adminConfig"
 import { OFFICIAL_CHAPTER_TEAM } from "@/data/teamData"
+import { CANONICAL_GALLERY_PHOTOS } from "@/data/galleryData"
 import {
   teamApi,
   eventsApi,
@@ -311,8 +312,8 @@ export async function duplicateEvent(id: string): Promise<string> {
 // =========================================================================
 
 export function useGallery() {
-  const [gallery, setGallery] = useState<GalleryPhoto[]>([])
-  const [loading, setLoading] = useState(true)
+  const [gallery, setGallery] = useState<GalleryPhoto[]>(() => (CANONICAL_GALLERY_PHOTOS as unknown) as GalleryPhoto[])
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -321,16 +322,39 @@ export function useGallery() {
       try {
         const list = await galleryApi.getAll()
         if (isMounted) {
-          const normalized = list.map((g) => ({
-            ...g,
-            eventName: g.event_name || g.eventName,
-          }))
-          setGallery(normalized)
+          if (list && list.length > 0) {
+            // Merge with canonical photos ensuring labels, URLs, and event names are populated
+            const normalized = list.map((g) => {
+              const canonical = CANONICAL_GALLERY_PHOTOS.find((c) => c.id === g.id)
+              return {
+                ...g,
+                label: g.label && g.label.trim() !== "" ? g.label : canonical?.label || "Chapter Activity",
+                url: g.url && g.url.trim() !== "" ? g.url : canonical?.url || "/ssit-group-photo.jpg",
+                caption: g.caption && g.caption.trim() !== "" ? g.caption : canonical?.caption || "",
+                category: g.category || canonical?.category || "Workshop",
+                date: g.date || canonical?.date || "",
+                order: g.order !== undefined ? g.order : (canonical?.order || 1),
+                eventName: g.event_name || g.eventName || canonical?.eventName || canonical?.event_name,
+              }
+            })
+
+            // Add any missing canonical photos (such as gal-3 Chapter Inauguration 2026)
+            const existingIds = new Set(normalized.map((g) => g.id))
+            const missingCanonical = ((CANONICAL_GALLERY_PHOTOS as unknown) as GalleryPhoto[]).filter((c) => !existingIds.has(c.id))
+
+            const merged = [...normalized, ...missingCanonical].sort((a, b) => (a.order || 0) - (b.order || 0))
+            setGallery(merged)
+          } else {
+            setGallery((CANONICAL_GALLERY_PHOTOS as unknown) as GalleryPhoto[])
+          }
           setLoading(false)
         }
       } catch (err) {
         console.warn("Failed to load gallery from FastAPI:", err)
-        if (isMounted) setLoading(false)
+        if (isMounted) {
+          setGallery((CANONICAL_GALLERY_PHOTOS as unknown) as GalleryPhoto[])
+          setLoading(false)
+        }
       }
     }
 

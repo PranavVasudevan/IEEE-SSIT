@@ -682,180 +682,243 @@ def seed_database():
         db.commit()
         logger.info(f"Successfully synced {len(team_members)} official 2026 team members with photos.")
 
-        # 2. SEED EVENTS
-        if db.query(Event).count() == 0:
-            logger.info("Seeding initial Chapter Events...")
-            events = [
-                Event(
-                    id="ev-1",
-                    title="AI Ethics & Algorithmic Bias in Healthcare Systems",
-                    category="Workshop",
-                    date="March 15, 2025",
-                    time="2:00 PM – 4:30 PM",
-                    start_time="14:00",
-                    end_time="16:30",
-                    location="SSN Central Auditorium / Hybrid",
-                    mode="Hybrid",
-                    description="An interactive hands-on workshop examining algorithmic transparency, bias mitigation in diagnostic models, and the ethical responsibility of engineers deploying AI in critical healthcare infrastructure.",
-                    image="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&h=500&fit=crop&auto=format",
-                    register_url="https://forms.gle/ssnieee-ai-ethics-2025",
-                    speaker="Dr. K. Swaminathan",
-                    speaker_role="IIT Madras AI Ethics Lab Lead",
-                    deadline="March 14, 2025",
-                    featured=True,
-                    status="upcoming",
-                    published=True,
-                ),
-                Event(
-                    id="ev-2",
-                    title="Envision 2025: Tech for Humanity National Hackathon",
-                    category="Hackathon",
-                    date="April 11–12, 2025",
-                    time="36-Hour Hackathon",
-                    start_time="09:00",
-                    end_time="18:00",
-                    location="SSN Innovation & Incubation Centre",
-                    mode="In-Person",
-                    description="Annual national level hackathon focused on sustainable energy solutions, assistive technologies for disabilities, and reducing the rural digital divide. Cash prizes worth 1.5 Lakhs.",
-                    image="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=500&fit=crop&auto=format",
-                    register_url="https://unstop.com/hackathons/envision-2025-ssn",
-                    speaker="IEEE SSIT Madras Section Mentors",
-                    speaker_role="Industry Advisory Committee",
-                    deadline="April 05, 2025",
-                    featured=True,
-                    status="upcoming",
-                    published=True,
-                ),
-                Event(
-                    id="ev-3",
-                    title="Universal Digital Inclusion: Bridging Rural Connectivity",
-                    category="Chapter Event",
-                    date="January 24, 2025",
-                    time="3:30 PM – 5:00 PM",
-                    start_time="15:30",
-                    end_time="17:00",
-                    location="Mini Auditorium, SSN CE",
-                    mode="In-Person",
-                    description="Distinguished panel discussion exploring mesh networking, low-power satellite terminals, and educational access in underserved rural communities across Tamil Nadu.",
-                    image="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=500&fit=crop&auto=format",
-                    speaker="Prof. S. Ramanathan & Panel",
-                    speaker_role="Senior Members, IEEE",
-                    status="completed",
-                    published=True,
-                ),
-                Event(
-                    id="ev-4",
-                    title="IEEE ISTAS 2025 Chapter Preview & Paper Writing Sprint",
-                    category="Symposium",
-                    date="May 2, 2025",
-                    time="10:00 AM – 1:00 PM",
-                    start_time="10:00",
-                    end_time="13:00",
-                    location="ECE Seminar Hall, SSN",
-                    mode="In-Person",
-                    description="Mentorship sprint guiding student researchers to prepare, format, and submit conference papers for IEEE International Symposium on Technology and Society (ISTAS 2025).",
-                    image="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=500&fit=crop&auto=format",
-                    register_url="https://forms.gle/ssn-istas-paper-sprint",
-                    deadline="April 28, 2025",
-                    featured=False,
-                    status="upcoming",
-                    published=True,
-                ),
-            ]
-            db.add_all(events)
-            db.commit()
-            logger.info("Successfully seeded initial events.")
+        # 2. SEED / SYNC EVENTS
+        logger.info("Syncing canonical Chapter Events...")
+        events = [
+            Event(
+                id="ev-1",
+                title="AI Ethics & Algorithmic Bias in Healthcare Systems",
+                category="Workshop",
+                date="March 15, 2025",
+                time="2:00 PM – 4:30 PM",
+                start_time="14:00",
+                end_time="16:30",
+                location="SSN Central Auditorium / Hybrid",
+                mode="Hybrid",
+                description="An interactive hands-on workshop examining algorithmic transparency, bias mitigation in diagnostic models, and the ethical responsibility of engineers deploying AI in critical healthcare infrastructure.",
+                image="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&h=500&fit=crop&auto=format",
+                register_url="https://forms.gle/ssnieee-ai-ethics-2025",
+                speaker="Dr. K. Swaminathan",
+                speaker_role="IIT Madras AI Ethics Lab Lead",
+                deadline="March 14, 2025",
+                featured=True,
+                status="upcoming",
+                published=True,
+            ),
+            Event(
+                id="ev-2",
+                title="Envision 2025: Tech for Humanity National Hackathon",
+                category="Hackathon",
+                date="April 11–12, 2025",
+                time="36-Hour Hackathon",
+                start_time="09:00",
+                end_time="18:00",
+                location="SSN Innovation & Incubation Centre",
+                mode="In-Person",
+                description="Annual national level hackathon focused on sustainable energy solutions, assistive technologies for disabilities, and reducing the rural digital divide. Cash prizes worth 1.5 Lakhs.",
+                image="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=500&fit=crop&auto=format",
+                register_url="https://unstop.com/hackathons/envision-2025-ssn",
+                speaker="IEEE SSIT Madras Section Mentors",
+                speaker_role="Industry Advisory Committee",
+                deadline="April 05, 2025",
+                featured=True,
+                status="upcoming",
+                published=True,
+            ),
+            Event(
+                id="ev-3",
+                title="Universal Digital Inclusion: Bridging Rural Connectivity",
+                category="Chapter Event",
+                date="January 24, 2025",
+                time="3:30 PM – 5:00 PM",
+                start_time="15:30",
+                end_time="17:00",
+                location="Mini Auditorium, SSN CE",
+                mode="In-Person",
+                description="Distinguished panel discussion exploring mesh networking, low-power satellite terminals, and educational access in underserved rural communities across Tamil Nadu.",
+                image="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=500&fit=crop&auto=format",
+                speaker="Prof. S. Ramanathan & Panel",
+                speaker_role="Senior Members, IEEE",
+                status="completed",
+                published=True,
+            ),
+            Event(
+                id="ev-4",
+                title="IEEE ISTAS 2025 Chapter Preview & Paper Writing Sprint",
+                category="Symposium",
+                date="May 2, 2025",
+                time="10:00 AM – 1:00 PM",
+                start_time="10:00",
+                end_time="13:00",
+                location="ECE Seminar Hall, SSN",
+                mode="In-Person",
+                description="Mentorship sprint guiding student researchers to prepare, format, and submit conference papers for IEEE International Symposium on Technology and Society (ISTAS 2025).",
+                image="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=500&fit=crop&auto=format",
+                register_url="https://forms.gle/ssn-istas-paper-sprint",
+                deadline="April 28, 2025",
+                featured=False,
+                status="upcoming",
+                published=True,
+            ),
+        ]
+        for ev in events:
+            existing = db.query(Event).filter(Event.id == ev.id).first()
+            if existing:
+                existing.title = ev.title
+                existing.category = ev.category
+                existing.date = ev.date
+                existing.time = ev.time
+                existing.start_time = ev.start_time
+                existing.end_time = ev.end_time
+                existing.location = ev.location
+                existing.mode = ev.mode
+                existing.description = ev.description
+                existing.image = ev.image
+                existing.register_url = ev.register_url
+                existing.speaker = ev.speaker
+                existing.speaker_role = ev.speaker_role
+                existing.deadline = ev.deadline
+                existing.featured = ev.featured
+                existing.status = ev.status
+                existing.published = ev.published
+            else:
+                db.add(ev)
+        db.commit()
 
-        # 3. SEED GALLERY PHOTOS
-        if db.query(GalleryPhoto).count() == 0:
-            logger.info("Seeding gallery photos...")
-            photos = [
-                GalleryPhoto(
-                    id="gal-1",
-                    url="https://images.unsplash.com/photo-1606761568499-6d2451b23c66?w=800&h=550&fit=crop&auto=format",
-                    alt="Students at computer workstations during a session",
-                    label="Technical Workshop 2025",
-                    caption="Hands-on AI ethics testing on real-world datasets.",
-                    event_name="AI Ethics & Algorithmic Bias",
-                    category="Workshop",
-                    date="Feb 2025",
-                    featured=True,
-                    order=1,
-                ),
-                GalleryPhoto(
-                    id="gal-2",
-                    url="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=550&fit=crop&auto=format",
-                    alt="Engineering student at a laptop",
-                    label="Ethics in AI Research Session",
-                    caption="Student researchers analyzing ethical implications.",
-                    category="Symposium",
-                    date="Jan 2025",
-                    order=2,
-                ),
-                GalleryPhoto(
-                    id="gal-3",
-                    url="/ssit-group-photo.jpg",
-                    alt="IEEE SPS and SSIT Inauguration SSN Student Branches 2026",
-                    label="Chapter Inaugural Ceremony 2026",
-                    caption="Official IEEE SPS and SSIT Chapter Inauguration at SSN College of Engineering with Chief Guest Mr. Veera Raghavan Seshadri.",
-                    category="Symposium",
-                    date="2026",
-                    featured=True,
-                    order=1,
-                ),
-                GalleryPhoto(
-                    id="gal-4",
-                    url="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=1000&fit=crop&auto=format",
-                    alt="LED technology panel",
-                    label="Assistive Tech Demonstration",
-                    caption="Smart assistive hardware prototype for visually impaired.",
-                    category="Workshop",
-                    date="Nov 2024",
-                    featured=True,
-                    order=4,
-                ),
-                GalleryPhoto(
-                    id="gal-5",
-                    url="https://images.unsplash.com/photo-1782388713336-fcb8aa6db8f0?w=800&h=550&fit=crop&auto=format",
-                    alt="Two students collaborating at laptop",
-                    label="Envision Hackathon Sprint",
-                    caption="Teams building rural connectivity prototypes.",
-                    event_name="Envision Hackathon",
-                    category="Hackathon",
-                    date="Oct 2024",
-                    order=5,
-                ),
-                GalleryPhoto(
-                    id="gal-6",
-                    url="https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&h=550&fit=crop&auto=format",
-                    alt="Student in lab with engineering equipment",
-                    label="Hardware Sustainability Lab",
-                    caption="Testing e-waste recycling and circular economy circuit boards.",
-                    category="Campus",
-                    date="Sep 2024",
-                    order=6,
-                ),
-            ]
-            db.add_all(photos)
-            db.commit()
-            logger.info("Successfully seeded gallery photos.")
+        # Clean any stale event IDs not in canonical list
+        canonical_event_ids = {e.id for e in events}
+        for old_ev in db.query(Event).all():
+            if old_ev.id not in canonical_event_ids and not old_ev.id.startswith("ev-custom-"):
+                db.delete(old_ev)
+        db.commit()
+        logger.info("Successfully synced canonical events.")
 
-        # 4. SEED ANNOUNCEMENTS
-        if db.query(Announcement).count() == 0:
-            logger.info("Seeding announcements...")
-            ann = Announcement(
+        # 3. SEED / SYNC GALLERY PHOTOS
+        logger.info("Syncing canonical gallery photos...")
+        photos = [
+            GalleryPhoto(
+                id="gal-3",
+                url="/ssit-group-photo.jpg",
+                alt="IEEE SPS and SSIT Inauguration SSN Student Branches 2026",
+                label="Chapter Inaugural Ceremony 2026",
+                caption="Official IEEE SPS and SSIT Chapter Inauguration at SSN College of Engineering with Chief Guest Mr. Veera Raghavan Seshadri.",
+                event_name="Chapter Inauguration",
+                category="Symposium",
+                date="2026",
+                featured=True,
+                order=1,
+            ),
+            GalleryPhoto(
+                id="gal-1",
+                url="https://images.unsplash.com/photo-1606761568499-6d2451b23c66?w=800&h=550&fit=crop&auto=format",
+                alt="Students at computer workstations during a session",
+                label="Technical Workshop 2025",
+                caption="Hands-on AI ethics testing on real-world datasets.",
+                event_name="AI Ethics & Algorithmic Bias",
+                category="Workshop",
+                date="Feb 2025",
+                featured=True,
+                order=2,
+            ),
+            GalleryPhoto(
+                id="gal-2",
+                url="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=550&fit=crop&auto=format",
+                alt="Engineering student at a laptop",
+                label="Ethics in AI Research Session",
+                caption="Student researchers analyzing ethical implications.",
+                event_name="Ethics in AI",
+                category="Symposium",
+                date="Jan 2025",
+                order=3,
+            ),
+            GalleryPhoto(
+                id="gal-4",
+                url="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=1000&fit=crop&auto=format",
+                alt="LED technology panel",
+                label="Assistive Tech Demonstration",
+                caption="Smart assistive hardware prototype for visually impaired.",
+                event_name="Assistive Tech Demo",
+                category="Workshop",
+                date="Nov 2024",
+                featured=True,
+                order=4,
+            ),
+            GalleryPhoto(
+                id="gal-5",
+                url="https://images.unsplash.com/photo-1782388713336-fcb8aa6db8f0?w=800&h=550&fit=crop&auto=format",
+                alt="Two students collaborating at laptop",
+                label="Envision Hackathon Sprint",
+                caption="Teams building rural connectivity prototypes.",
+                event_name="Envision Hackathon",
+                category="Hackathon",
+                date="Oct 2024",
+                order=5,
+            ),
+            GalleryPhoto(
+                id="gal-6",
+                url="https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&h=550&fit=crop&auto=format",
+                alt="Student in lab with engineering equipment",
+                label="Hardware Sustainability Lab",
+                caption="Testing e-waste recycling and circular economy circuit boards.",
+                event_name="Hardware Lab",
+                category="Campus",
+                date="Sep 2024",
+                order=6,
+            ),
+        ]
+        for photo in photos:
+            existing = db.query(GalleryPhoto).filter(GalleryPhoto.id == photo.id).first()
+            if existing:
+                existing.url = photo.url
+                existing.alt = photo.alt
+                existing.label = photo.label
+                existing.caption = photo.caption
+                existing.event_name = photo.event_name
+                existing.category = photo.category
+                existing.date = photo.date
+                existing.featured = photo.featured
+                existing.order = photo.order
+            else:
+                db.add(photo)
+        db.commit()
+
+        # Clean any stale gallery IDs not in canonical list
+        canonical_gal_ids = {p.id for p in photos}
+        for old_gal in db.query(GalleryPhoto).all():
+            if old_gal.id not in canonical_gal_ids and not old_gal.id.startswith("gal-custom-"):
+                db.delete(old_gal)
+        db.commit()
+        logger.info("Successfully synced canonical gallery photos.")
+
+        # 4. SEED / SYNC ANNOUNCEMENTS
+        logger.info("Syncing announcements...")
+        announcements_list = [
+            Announcement(
                 id="ann-2",
                 text="SSIT Student Chapter Call for Core Committee & Web Dev Volunteers for Academic Year 2025–26.",
                 cta_text="Join Team",
                 cta_url="/membership",
                 priority="normal",
                 status="active",
-                active=False,
+                active=True,
                 start_date="2025-02-18",
             )
-            db.add(ann)
-            db.commit()
-            logger.info("Successfully seeded announcements.")
+        ]
+        for ann in announcements_list:
+            existing = db.query(Announcement).filter(Announcement.id == ann.id).first()
+            if existing:
+                existing.text = ann.text
+                existing.cta_text = ann.cta_text
+                existing.cta_url = ann.cta_url
+                existing.priority = ann.priority
+                existing.status = ann.status
+                existing.start_date = ann.start_date
+                existing.expiry_date = ann.expiry_date
+                existing.active = ann.active
+            else:
+                db.add(ann)
+        db.commit()
+        logger.info("Successfully synced announcements.")
 
         # 5. SEED CHAPTER SETTINGS
         if not db.query(ChapterSetting).filter(ChapterSetting.key == "chapter_info").first():
