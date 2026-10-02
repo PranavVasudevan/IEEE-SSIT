@@ -100,21 +100,35 @@ export default function Events() {
             </div>
             <div>
               <div className="font-mono text-[11px] uppercase tracking-wider text-amber-400 font-semibold">
-                Official Chapter Status · Spring 2026
+                Official Chapter Status · October 2026
               </div>
               <div className="font-display font-bold text-white text-base md:text-lg">
-                2026 Flagship Registrations Opening Soon
+                DIGITAL HEIST — Registration Now Open!
               </div>
               <div className="font-sans-ui text-xs text-slate-400">
-                Official Google Form submission links for Prompt-a-Thon & Digital Heist will be unlocked shortly.
+                🚨 The Heist is on! 8 October 2026 at Mini Auditorium, SSN College of Engineering. Cash Prize: ₹2000+.
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30">
-              UPCOMING SPRINT
-            </span>
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <a
+              href="https://drive.google.com/file/d/1iJ4_4zyu6ahRXmDom4z5YP3xq95LBra9/view"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all"
+            >
+              <Icons.ExternalLink size={13} />
+              <span>Rulebook</span>
+            </a>
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLScPO6DdtWuVManOljeBdz6JL5YQDsq_pkFO0nn_jy7rr6oJWg/viewform"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-mono font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 transition-all shadow-md active:scale-95"
+            >
+              <span>REGISTER NOW →</span>
+            </a>
           </div>
         </div>
       </div>
@@ -140,6 +154,7 @@ export default function Events() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {FLAGSHIP_2026_EVENTS.map((event) => {
             const isCyan = event.accentColor === "cyan"
+            const isCompleted = event.status === "completed"
             return (
               <div
                 key={event.id}
@@ -166,9 +181,15 @@ export default function Events() {
                     </span>
                   </div>
 
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 uppercase">
-                    ● UPCOMING
-                  </span>
+                  {isCompleted ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold text-slate-400 bg-slate-800/80 border border-slate-700 uppercase">
+                      ● CONCLUDED
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 uppercase animate-pulse">
+                      ● REGISTRATION OPEN
+                    </span>
+                  )}
                 </div>
 
                 {/* Event Heading & Tagline */}
@@ -180,7 +201,7 @@ export default function Events() {
                   >
                     {event.title}
                   </h3>
-                  <p className="font-sans-ui text-sm text-slate-300 font-light leading-relaxed">
+                  <p className="font-sans-ui text-sm text-slate-300 font-light leading-relaxed whitespace-pre-line">
                     {event.subtitle || event.description}
                   </p>
                 </div>
@@ -197,17 +218,17 @@ export default function Events() {
 
                   <div className="space-y-0.5">
                     <span className="text-[10px] text-slate-500 uppercase">Venue</span>
-                    <div className="text-white font-medium flex items-center gap-1.5">
+                    <div className="text-white font-medium flex items-center gap-1.5" title={event.location}>
                       <Icons.MapPin size={13} className={isCyan ? "text-cyan-400" : "text-amber-400"} />
-                      <span className="truncate">{event.location.split("/")[0]}</span>
+                      <span className="truncate">{event.location}</span>
                     </div>
                   </div>
 
                   <div className="space-y-0.5 col-span-2 sm:col-span-1">
-                    <span className="text-[10px] text-slate-500 uppercase">Squad Format</span>
-                    <div className="text-white font-medium flex items-center gap-1.5">
-                      <Icons.Users size={13} className={isCyan ? "text-cyan-400" : "text-amber-400"} />
-                      <span className="truncate">{event.squadFormat || "Team"}</span>
+                    <span className="text-[10px] text-slate-500 uppercase">Cash Prize / Awards</span>
+                    <div className="text-amber-400 font-medium flex items-center gap-1.5">
+                      <Icons.Sparkles size={13} className="text-amber-400" />
+                      <span className="truncate">{event.prizePool || "Awards"}</span>
                     </div>
                   </div>
                 </div>
@@ -222,7 +243,19 @@ export default function Events() {
                     <span>View Details & Rules</span>
                   </button>
 
-                  {isValidRegistrationUrl(event.registerUrl) ? (
+                  {event.rulebookUrl && (
+                    <a
+                      href={event.rulebookUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all active:scale-[0.98]"
+                    >
+                      <Icons.ExternalLink size={14} />
+                      <span>Rulebook</span>
+                    </a>
+                  )}
+
+                  {!isCompleted && isValidRegistrationUrl(event.registerUrl) ? (
                     <a
                       href={event.registerUrl!}
                       target="_blank"
@@ -235,6 +268,11 @@ export default function Events() {
                     >
                       <span>Register Now →</span>
                     </a>
+                  ) : isCompleted ? (
+                    <span className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-medium border border-slate-800 bg-slate-900/40 text-slate-500 select-none">
+                      <Icons.Check size={14} className="text-slate-500" />
+                      <span>Event Concluded</span>
+                    </span>
                   ) : (
                     <button
                       type="button"
@@ -375,9 +413,9 @@ export default function Events() {
                         <Icons.Calendar size={13} className="text-amber-400/80" />
                         <span>{event.date}</span>
                       </span>
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1.5" title={event.location}>
                         <Icons.MapPin size={13} className="text-cyan-400/80" />
-                        <span className="truncate max-w-[120px]">{event.location.split(",")[0]}</span>
+                        <span className="truncate max-w-[150px]">{event.location}</span>
                       </span>
                     </div>
 
@@ -389,7 +427,7 @@ export default function Events() {
                         Details & Rules
                       </button>
 
-                      {isValidRegistrationUrl(event.registerUrl) ? (
+                      {!isPast && isValidRegistrationUrl(event.registerUrl) ? (
                         <a
                           href={event.registerUrl!}
                           target="_blank"
@@ -469,7 +507,7 @@ export default function Events() {
               </div>
               <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
                 <span className="text-slate-500 text-[10px] block">VENUE</span>
-                <span className="text-white font-medium truncate block">{selectedEvent.location.split(",")[0]}</span>
+                <span className="text-white font-medium block leading-tight text-[11px]" title={selectedEvent.location}>{selectedEvent.location}</span>
               </div>
               <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
                 <span className="text-slate-500 text-[10px] block">SQUAD FORMAT</span>
@@ -513,10 +551,79 @@ export default function Events() {
                 <div className="space-y-4">
                   <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-2">
                     <span className="text-xs font-mono font-semibold uppercase text-cyan-400">Event Briefing</span>
-                    <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-light">
+                    <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-light whitespace-pre-line">
                       {selectedEvent.overview || selectedEvent.description}
                     </p>
                   </div>
+
+                  {/* Registration Fees & Policy */}
+                  {(selectedEvent.registrationFees || selectedEvent.registrationRule) && (
+                    <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold uppercase text-amber-400">
+                          Registration & Fee Matrix
+                        </span>
+                        {selectedEvent.registrationStatus && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase">
+                            {selectedEvent.registrationStatus}
+                          </span>
+                        )}
+                      </div>
+
+                      {selectedEvent.registrationFees && (
+                        <div className="grid grid-cols-2 gap-2.5 text-xs font-mono">
+                          <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                            <span className="text-slate-400 block text-[10px] uppercase">IEEE Members</span>
+                            <span className="text-emerald-400 font-bold text-sm">{selectedEvent.registrationFees.ieee}</span>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                            <span className="text-slate-400 block text-[10px] uppercase">Non-IEEE Members</span>
+                            <span className="text-white font-bold text-sm">{selectedEvent.registrationFees.nonIeee}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedEvent.registrationRule && (
+                        <p className="text-xs text-amber-200/90 leading-relaxed font-sans-ui bg-amber-950/30 p-2.5 rounded-xl border border-amber-500/20">
+                          ℹ️ <strong className="font-semibold text-white">Rule:</strong> {selectedEvent.registrationRule}
+                        </p>
+                      )}
+
+                      {selectedEvent.status === "completed" && selectedEvent.registerUrl && (
+                        <div className="pt-1 flex items-center justify-between text-xs font-mono text-slate-400 border-t border-amber-500/20">
+                          <span>Historical Registration Form:</span>
+                          <a
+                            href={selectedEvent.registerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 hover:underline inline-flex items-center gap-1 font-semibold"
+                          >
+                            <span>Google Form</span>
+                            <Icons.ExternalLink size={11} />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Contacts */}
+                  {selectedEvent.contacts && selectedEvent.contacts.length > 0 && (
+                    <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-2">
+                      <span className="text-xs font-mono font-semibold uppercase text-cyan-400">
+                        Event Coordinators & Contacts
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                        {selectedEvent.contacts.map((c, idx) => (
+                          <div key={idx} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-2">
+                            <span className="text-white font-medium">{c.name}</span>
+                            <a href={`tel:${c.phone.replace(/[^+\d]/g, "")}`} className="text-cyan-400 hover:underline">
+                              {c.phone}
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {selectedEvent.speaker && (
                     <div className="p-3.5 rounded-2xl border border-slate-800 bg-slate-950/40 flex items-center gap-3">
@@ -580,7 +687,7 @@ export default function Events() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-5 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between gap-3">
+            <div className="p-5 border-t border-slate-800 bg-slate-950/80 flex flex-wrap items-center justify-between gap-3">
               <button
                 onClick={() => setSelectedEvent(null)}
                 className="px-5 py-2.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-all"
@@ -588,25 +695,39 @@ export default function Events() {
                 Close
               </button>
 
-              {isValidRegistrationUrl(selectedEvent.registerUrl) ? (
-                <a
-                  href={selectedEvent.registerUrl!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold bg-cyan-400 text-slate-950 hover:bg-cyan-300 transition-all shadow-md"
-                >
-                  <span>Register Now →</span>
-                </a>
-              ) : selectedEvent.status === "completed" ? (
-                <span className="px-5 py-2.5 rounded-xl font-mono text-xs text-slate-500 uppercase">
-                  Event Concluded
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-amber-500/30 bg-amber-500/10 text-amber-300">
-                  <Icons.Clock size={13} />
-                  <span>Registration Link Coming Soon</span>
-                </span>
-              )}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {selectedEvent.rulebookUrl && (
+                  <a
+                    href={selectedEvent.rulebookUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all active:scale-[0.98]"
+                  >
+                    <Icons.ExternalLink size={13} />
+                    <span>Rulebook</span>
+                  </a>
+                )}
+
+                {selectedEvent.status !== "completed" && isValidRegistrationUrl(selectedEvent.registerUrl) ? (
+                  <a
+                    href={selectedEvent.registerUrl!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 transition-all shadow-md active:scale-[0.98]"
+                  >
+                    <span>Register Now →</span>
+                  </a>
+                ) : selectedEvent.status === "completed" ? (
+                  <span className="px-5 py-2.5 rounded-xl font-mono text-xs text-slate-500 uppercase border border-slate-800 bg-slate-900/40">
+                    Event Concluded
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-amber-500/30 bg-amber-500/10 text-amber-300">
+                    <Icons.Clock size={13} />
+                    <span>Registration Link Coming Soon</span>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
