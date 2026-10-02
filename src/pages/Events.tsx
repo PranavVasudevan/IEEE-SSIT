@@ -133,8 +133,8 @@ export default function Events() {
         </div>
       </div>
 
-      {/* 2. Flagship Events Priority Showcase */}
-      <section className="space-y-8">
+      {/* 2. Flagship Events Priority Showcase & Events Matrix */}
+      <section className="space-y-8" id="flagship-challenges">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-800">
           <div>
             <SectionLabel>2026 Main Events</SectionLabel>
@@ -151,182 +151,26 @@ export default function Events() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {FLAGSHIP_2026_EVENTS.map((event) => {
-            const isCyan = event.accentColor === "cyan"
-            const isCompleted = event.status === "completed"
-            return (
-              <div
-                key={event.id}
-                className={`relative rounded-3xl border p-6 sm:p-8 flex flex-col justify-between space-y-6 transition-all duration-300 group hover:-translate-y-1 ${
-                  isCyan
-                    ? "border-cyan-500/40 bg-gradient-to-b from-cyan-950/20 via-slate-900/60 to-slate-950/80 shadow-lg shadow-cyan-950/30 hover:border-cyan-400/70 hover:shadow-cyan-500/10"
-                    : "border-amber-500/40 bg-gradient-to-b from-amber-950/20 via-slate-900/60 to-slate-950/80 shadow-lg shadow-amber-950/30 hover:border-amber-400/70 hover:shadow-amber-500/10"
-                } backdrop-blur-xl`}
-              >
-                {/* Top Badge & Track */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold tracking-wider uppercase ${
-                        isCyan
-                          ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                          : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                      }`}
-                    >
-                      {event.badge || "FLAGSHIP"}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-sans-ui font-semibold text-slate-300 bg-slate-800/80 border border-slate-700">
-                      {event.category}
-                    </span>
-                  </div>
-
-                  {isCompleted ? (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold text-slate-400 bg-slate-800/80 border border-slate-700 uppercase">
-                      ● CONCLUDED
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 uppercase animate-pulse">
-                      ● REGISTRATION OPEN
-                    </span>
-                  )}
-                </div>
-
-                {/* Event Heading & Tagline */}
-                <div className="space-y-3">
-                  <h3
-                    className={`font-display text-2xl sm:text-3xl font-extrabold text-white transition-colors ${
-                      isCyan ? "group-hover:text-cyan-300" : "group-hover:text-amber-300"
-                    }`}
-                  >
-                    {event.title}
-                  </h3>
-                  <p className="font-sans-ui text-sm text-slate-300 font-light leading-relaxed whitespace-pre-line">
-                    {event.subtitle || event.description}
-                  </p>
-                </div>
-
-                {/* Specs Matrix Bar */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl border border-slate-800/80 bg-slate-950/60 font-mono text-xs">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] text-slate-500 uppercase">Date</span>
-                    <div className="text-white font-medium flex items-center gap-1.5">
-                      <Icons.Calendar size={13} className={isCyan ? "text-cyan-400" : "text-amber-400"} />
-                      <span>{event.date}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] text-slate-500 uppercase">Venue</span>
-                    <div className="text-white font-medium flex items-center gap-1.5" title={event.location}>
-                      <Icons.MapPin size={13} className={isCyan ? "text-cyan-400" : "text-amber-400"} />
-                      <span className="truncate">{event.location}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-0.5 col-span-2 sm:col-span-1">
-                    <span className="text-[10px] text-slate-500 uppercase">Cash Prize / Awards</span>
-                    <div className="text-amber-400 font-medium flex items-center gap-1.5">
-                      <Icons.Sparkles size={13} className="text-amber-400" />
-                      <span className="truncate">{event.prizePool || "Awards"}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <button
-                    onClick={() => openEventModal(event)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-slate-700 bg-slate-800/80 text-white hover:bg-slate-700 transition-all active:scale-[0.98]"
-                  >
-                    <Icons.BookOpen size={14} className={isCyan ? "text-cyan-400" : "text-amber-400"} />
-                    <span>View Details & Rules</span>
-                  </button>
-
-                  {event.rulebookUrl && (
-                    <a
-                      href={event.rulebookUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all active:scale-[0.98]"
-                    >
-                      <Icons.ExternalLink size={14} />
-                      <span>Rulebook</span>
-                    </a>
-                  )}
-
-                  {!isCompleted && isValidRegistrationUrl(event.registerUrl) ? (
-                    <a
-                      href={event.registerUrl!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold transition-all shadow-md active:scale-[0.98] ${
-                        isCyan
-                          ? "bg-cyan-400 text-slate-950 hover:bg-cyan-300 shadow-cyan-500/20"
-                          : "bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-amber-500/20"
-                      }`}
-                    >
-                      <span>Register Now →</span>
-                    </a>
-                  ) : isCompleted ? (
-                    <span className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-medium border border-slate-800 bg-slate-900/40 text-slate-500 select-none">
-                      <Icons.Check size={14} className="text-slate-500" />
-                      <span>Event Concluded</span>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      aria-disabled="true"
-                      className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-slate-800 bg-slate-900/60 text-slate-400 cursor-not-allowed select-none"
-                    >
-                      <Icons.Clock size={14} className="text-amber-400/80" />
-                      <span>Registration Opens Soon</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* 3. Event Filter & Search Strip */}
-      <section className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-          <div>
-            <SectionLabel>All Chapters & Symposia</SectionLabel>
-            <h2 className="font-display text-2xl font-bold text-white mt-1">
-              Events Matrix & Archives
-            </h2>
-          </div>
-
-          <Link
-            to="/activities"
-            className="inline-flex items-center gap-1.5 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition-colors"
-          >
-            <span>View 2025 Global Conferences & Series</span> →
-          </Link>
-        </div>
-
-        {/* Filter Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Filter Controls Bar (Events Matrix & Archives) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-md" id="events-matrix">
           <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs uppercase tracking-wider text-slate-400 font-semibold mr-1">
+              Events Matrix & Archives:
+            </span>
             {[
-              { id: "all", label: "All Events" },
-              { id: "flagship", label: "Flagship 2026" },
-              { id: "upcoming", label: "Upcoming" },
-              { id: "completed", label: "Concluded Archive" },
+              { id: "all", label: `All Events (${allEvents.length})` },
+              { id: "upcoming", label: "Upcoming (1)" },
+              { id: "completed", label: "Concluded (1)" },
             ].map((tab) => {
               const isActive = activeFilter === tab.id
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveFilter(tab.id as any)}
-                  className={`px-4 py-2 rounded-xl text-xs font-sans-ui font-semibold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-sans-ui font-semibold transition-all ${
                     isActive
                       ? "bg-cyan-400 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
-                      : "border border-slate-800 bg-slate-900/50 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60"
+                      : "border border-slate-800 bg-slate-900/60 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60"
                   }`}
                 >
                   {tab.label}
@@ -355,7 +199,6 @@ export default function Events() {
           </div>
         </div>
 
-        {/* Supplementary Events Grid */}
         {filteredEvents.length === 0 ? (
           <div className="p-12 rounded-3xl border border-slate-800 bg-slate-900/30 backdrop-blur-xl text-center space-y-4 max-w-md mx-auto">
             <Icons.Calendar size={32} className="mx-auto text-slate-500" />
@@ -374,78 +217,139 @@ export default function Events() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {filteredEvents.map((event) => {
-              const isPast = event.status === "completed"
+              const isCyan = event.accentColor === "cyan"
+              const isCompleted = event.status === "completed"
               return (
                 <div
                   key={event.id}
-                  className="rounded-2xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl p-6 flex flex-col justify-between space-y-5 hover:border-slate-700 transition-all duration-300 group"
+                  className={`relative rounded-3xl border p-6 sm:p-8 flex flex-col justify-between space-y-6 transition-all duration-300 group hover:-translate-y-1 ${
+                    isCyan
+                      ? "border-cyan-500/40 bg-gradient-to-b from-cyan-950/20 via-slate-900/60 to-slate-950/80 shadow-lg shadow-cyan-950/30 hover:border-cyan-400/70 hover:shadow-cyan-500/10"
+                      : "border-amber-500/40 bg-gradient-to-b from-amber-950/20 via-slate-900/60 to-slate-950/80 shadow-lg shadow-amber-950/30 hover:border-amber-400/70 hover:shadow-amber-500/10"
+                  } backdrop-blur-xl`}
                 >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase bg-slate-800 text-slate-300 border border-slate-700">
-                        {event.category}
-                      </span>
+                  {/* Top Badge & Track */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase ${
-                          isPast
-                            ? "bg-slate-800/80 text-slate-400 border border-slate-700"
-                            : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                        className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold tracking-wider uppercase ${
+                          isCyan
+                            ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                            : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
                         }`}
                       >
-                        {isPast ? "CONCLUDED" : "UPCOMING"}
+                        {event.badge || "FLAGSHIP"}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-sans-ui font-semibold text-slate-300 bg-slate-800/80 border border-slate-700">
+                        {event.category}
                       </span>
                     </div>
 
-                    <h4 className="font-display text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">
-                      {event.title}
-                    </h4>
+                    {isCompleted ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold text-slate-400 bg-slate-800/80 border border-slate-700 uppercase">
+                        ● CONCLUDED
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 uppercase animate-pulse">
+                        ● REGISTRATION OPEN
+                      </span>
+                    )}
+                  </div>
 
-                    <p className="font-sans-ui text-xs text-slate-400 font-light line-clamp-3 leading-relaxed">
-                      {event.description}
+                  {/* Event Heading & Tagline */}
+                  <div className="space-y-3">
+                    <h3
+                      className={`font-display text-2xl sm:text-3xl font-extrabold text-white transition-colors ${
+                        isCyan ? "group-hover:text-cyan-300" : "group-hover:text-amber-300"
+                      }`}
+                    >
+                      {event.title}
+                    </h3>
+                    <p className="font-sans-ui text-sm text-slate-300 font-light leading-relaxed whitespace-pre-line">
+                      {event.subtitle || event.description}
                     </p>
                   </div>
 
-                  <div className="space-y-3 pt-4 border-t border-slate-800/80 text-xs font-mono">
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span className="flex items-center gap-1.5">
-                        <Icons.Calendar size={13} className="text-amber-400/80" />
+                  {/* Specs Matrix Bar */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl border border-slate-800/80 bg-slate-950/60 font-mono text-xs">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] text-slate-500 uppercase">Date</span>
+                      <div className="text-white font-medium flex items-center gap-1.5">
+                        <Icons.Calendar size={13} className={isCyan ? "text-cyan-400" : "text-amber-400"} />
                         <span>{event.date}</span>
-                      </span>
-                      <span className="flex items-center gap-1.5" title={event.location}>
-                        <Icons.MapPin size={13} className="text-cyan-400/80" />
-                        <span className="truncate max-w-[150px]">{event.location}</span>
-                      </span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        onClick={() => openEventModal(event)}
-                        className="flex-1 py-2 px-3 rounded-lg font-sans-ui text-[11px] font-semibold border border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-700 transition-all text-center"
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] text-slate-500 uppercase">Venue</span>
+                      <div className="text-white font-medium flex items-center gap-1.5" title={event.location}>
+                        <Icons.MapPin size={13} className={isCyan ? "text-cyan-400" : "text-amber-400"} />
+                        <span className="truncate">{event.location}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-0.5 col-span-2 sm:col-span-1">
+                      <span className="text-[10px] text-slate-500 uppercase">Cash Prize / Awards</span>
+                      <div className="text-amber-400 font-medium flex items-center gap-1.5">
+                        <Icons.Sparkles size={13} className="text-amber-400" />
+                        <span className="truncate">{event.prizePool || "Awards"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <button
+                      onClick={() => openEventModal(event)}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-slate-700 bg-slate-800/80 text-white hover:bg-slate-700 transition-all active:scale-[0.98]"
+                    >
+                      <Icons.BookOpen size={14} className={isCyan ? "text-cyan-400" : "text-amber-400"} />
+                      <span>View Details & Rules</span>
+                    </button>
+
+                    {event.rulebookUrl && (
+                      <a
+                        href={event.rulebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all active:scale-[0.98]"
                       >
-                        Details & Rules
-                      </button>
+                        <Icons.ExternalLink size={14} />
+                        <span>Rulebook</span>
+                      </a>
+                    )}
 
-                      {!isPast && isValidRegistrationUrl(event.registerUrl) ? (
-                        <a
-                          href={event.registerUrl!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 py-2 px-3 rounded-lg font-sans-ui text-[11px] font-bold bg-cyan-400 text-slate-950 hover:bg-cyan-300 transition-all text-center shadow-sm"
-                        >
-                          Register →
-                        </a>
-                      ) : isPast ? (
-                        <span className="flex-1 py-2 px-3 rounded-lg font-sans-ui text-[11px] font-medium bg-slate-800/40 text-slate-500 border border-slate-800 text-center select-none">
-                          Archived
-                        </span>
-                      ) : (
-                        <span className="flex-1 py-2 px-3 rounded-lg font-sans-ui text-[11px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20 text-center select-none">
-                          Opens Soon
-                        </span>
-                      )}
-                    </div>
+                    {!isCompleted && isValidRegistrationUrl(event.registerUrl) ? (
+                      <a
+                        href={event.registerUrl!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-bold transition-all shadow-md active:scale-[0.98] ${
+                          isCyan
+                            ? "bg-cyan-400 text-slate-950 hover:bg-cyan-300 shadow-cyan-500/20"
+                            : "bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-amber-500/20"
+                        }`}
+                      >
+                        <span>Register Now →</span>
+                      </a>
+                    ) : isCompleted ? (
+                      <span className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-medium border border-slate-800 bg-slate-900/40 text-slate-500 select-none">
+                        <Icons.Check size={14} className="text-slate-500" />
+                        <span>Event Concluded</span>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        aria-disabled="true"
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-sans-ui text-xs uppercase tracking-wider font-semibold border border-slate-800 bg-slate-900/60 text-slate-400 cursor-not-allowed select-none"
+                      >
+                        <Icons.Clock size={14} className="text-amber-400/80" />
+                        <span>Registration Opens Soon</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )
