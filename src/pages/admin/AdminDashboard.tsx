@@ -270,7 +270,7 @@ export default function AdminDashboard() {
       return (
         s.name.toLowerCase().includes(inquirySearch.toLowerCase()) ||
         s.email.toLowerCase().includes(inquirySearch.toLowerCase()) ||
-        s.department.toLowerCase().includes(inquirySearch.toLowerCase())
+        Boolean(s.department && s.department.toLowerCase().includes(inquirySearch.toLowerCase()))
       )
     })
   }, [membershipApps, inquirySearch])
@@ -2136,7 +2136,7 @@ export default function AdminDashboard() {
                       <div key={sub.id} className="flex items-center justify-between gap-3 p-4 bg-slate-900/60 hover:bg-slate-900 transition-colors">
                         <span className="font-mono text-xs text-slate-200 truncate">{sub.email}</span>
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-[11px] text-slate-500">{new Date(sub.timestamp).toLocaleDateString()}</span>
+                          <span className="text-[11px] text-slate-500">{new Date(sub.timestamp || sub.created_at || Date.now()).toLocaleDateString()}</span>
                           <button
                             onClick={async () => {
                               await deleteNewsletterSubscriber(sub.id)

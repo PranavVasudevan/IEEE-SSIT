@@ -10,14 +10,16 @@ export type SubmissionStatus =
   | "rejected"
   | "contacted"
 
+export type InquiryType = "membership" | "general" | "speaker" | "sponsorship"
+
 export interface ContactSubmission {
   id: string
   name: string
   email: string
   department?: string
   year?: string
-  inquiry_type?: string
-  type?: "membership" | "general" | "speaker" | "sponsorship"
+  inquiry_type?: InquiryType
+  type?: InquiryType
   interest?: string
   ieee_member?: string
   ssit_member?: string

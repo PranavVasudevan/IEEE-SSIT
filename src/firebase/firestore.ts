@@ -19,6 +19,7 @@ import {
   type Announcement,
   type ContactSubmission,
   type SubmissionStatus,
+  type InquiryType,
   type NewsletterSubscriber,
   type ChapterInfoData,
   type MembershipContentData,
@@ -34,6 +35,7 @@ export type {
   Announcement,
   ContactSubmission,
   SubmissionStatus,
+  InquiryType,
   NewsletterSubscriber,
   ChapterInfoData,
   MembershipContentData,
@@ -105,7 +107,7 @@ export async function addAdminEmail(email: string, _addedByEmail = "System Lead"
   }
 }
 
-export async function removeAdminEmail(emailToRemove: string): Promise<boolean> {
+export async function removeAdminEmail(emailToRemove: string, _removedByEmail?: string): Promise<boolean> {
   const clean = normalizeEmail(emailToRemove)
   try {
     await adminsApi.remove(clean)
@@ -712,7 +714,7 @@ export function useContactSubmissions() {
         if (isMounted) {
           const normalized = list.map((s) => ({
             ...s,
-            type: (s.inquiry_type || s.type || "general") as any,
+            type: s.type || s.inquiry_type || "general",
             timestamp: s.created_at || s.timestamp || "",
           }))
           setSubmissions(normalized)
